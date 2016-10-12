@@ -108,3 +108,23 @@ func Expire(key string, seconds int) (err error) {
 
 	return err
 }
+
+func Del(key string) (err error) {
+	c := pool.Get()
+	defer c.Close()
+
+	_, err = redis.Bool(c.Do("DEL", key))
+	return err
+}
+
+func MGet(keys string) ([]string, error) {
+	c := pool.Get()
+	defer c.Close()
+
+	var args []interface{}
+	for _, key := range keys {
+		args = append(args, key)
+	}
+
+	return redis.Strings(c.Do("MGET", args...))
+}

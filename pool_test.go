@@ -15,7 +15,7 @@ import (
 
 func Test(t *testing.T) { TestingT(t) }
 
-type RedisTestSuite struct {}
+type RedisTestSuite struct{}
 
 var _ = Suite(
 	&RedisTestSuite{},
@@ -134,6 +134,31 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	v, err = redis.Get(key2)
 	c.Assert(err, Equals, nil)
 	c.Assert(v, Equals, "5")
+}
+
+func (s *RedisTestSuite) TestHGet(c *C) {
+
+	keys := []string{}
+	for i := 0; i < 5; i++ {
+		key := randSeq(10)
+		redis.Set(key, randSeq(4))
+		keys = append(keys, key)
+	}
+
+	values, err := redis.MGet(keys)
+	c.Assert(err, IsNil)
+
+	expectedValues := []string{}
+	for _, key := range keys {
+		val, err := redis.Get(key)
+		c.Assert(err, IsNil)
+		expectedValues = append(expectedValues, val)
+	}
+
+	c.Assert(len(values), Equals, 5)
+	for i := 0; i < 5; i++ {
+		c.Assert(values[i], Equals, expectedValues[i])
+	}
 }
 
 // TODO: move it somewhere so we don't copy this everywhere
