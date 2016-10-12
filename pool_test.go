@@ -137,7 +137,7 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	c.Assert(v, Equals, "5")
 }
 
-func (s *RedisTestSuite) TestHGet(c *C) {
+func (s *RedisTestSuite) TestMGet(c *C) {
 
 	keys := []string{}
 	for i := 0; i < 5; i++ {
@@ -160,6 +160,31 @@ func (s *RedisTestSuite) TestHGet(c *C) {
 	for i := 0; i < 5; i++ {
 		c.Assert(values[i], Equals, expectedValues[i])
 	}
+}
+
+func (s *RedisTestSuite) TestMGetWIthFailedKeys(c *C) {
+	keyValMap := map[string]string{
+		randSeq(10): randSeq(10),
+		randSeq(10): randSeq(10),
+	}
+	keys := []string{}
+
+	for key, val := range keyValMap {
+		keys = append(keys, key)
+
+		redis.Set(key, val)
+	}
+
+	keys = append(keys, "THISDOESNOTEXIST")
+
+	values, err := redis.MGet(keys)
+
+	c.Assert(err, IsNil)
+
+	c.Assert(len(values), Equals, 3)
+	c.Assert(values[0], Not(Equals), "")
+	c.Assert(values[1], Not(Equals), "")
+	c.Assert(values[2], Equals, "")
 }
 
 // TODO: move it somewhere so we don't copy this everywhere
