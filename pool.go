@@ -117,8 +117,9 @@ func Del(key string) (err error) {
 	return err
 }
 
-func MGet(keys string) ([]string, error) {
+func MGet(keys []string) ([]string, error) {
 	c := pool.Get()
+
 	defer c.Close()
 
 	var args []interface{}

@@ -1,6 +1,7 @@
 package redis_test
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"testing"
@@ -141,7 +142,7 @@ func (s *RedisTestSuite) TestHGet(c *C) {
 	keys := []string{}
 	for i := 0; i < 5; i++ {
 		key := randSeq(10)
-		redis.Set(key, randSeq(4))
+		redis.Set(key, fmt.Sprintf("%d", i))
 		keys = append(keys, key)
 	}
 
