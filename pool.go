@@ -92,12 +92,11 @@ func Incr(key string) (err error) {
 	return
 }
 
-func IncrBy(key string, inc interface{}) (err error) {
+func IncrBy(key string, inc interface{}) (val interface{}, err error) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err = c.Do("INCRBY", key, inc)
-	return
+	return c.Do("INCRBY", key, inc)
 }
 
 func Expire(key string, seconds int) (err error) {

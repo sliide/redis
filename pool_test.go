@@ -34,7 +34,11 @@ func (s *RedisTestSuite) TestIncrBy(c *C) {
 	key := randSeq(32)
 
 	c.Assert(redis.Set(key, 1), IsNil)
-	c.Assert(redis.IncrBy(key, 10), IsNil)
+	newVal, err := redis.IncrBy(key, 10)
+
+	c.Assert(err, IsNil)
+
+	c.Assert(newVal, Equals, int64(11))
 
 	val, err := redis.Get(key)
 
