@@ -33,6 +33,10 @@ func (s *RedisTestSuite) TearDownSuite(c *C) {
 func (s *RedisTestSuite) TestIncrBy(c *C) {
 	key := randSeq(32)
 
+	incrVal, err := redis.IncrBy(key, 10)
+	c.Assert(err, IsNil)
+	c.Assert(incrVal, Equals, int64(10))
+
 	c.Assert(redis.Set(key, 1), IsNil)
 	newVal, err := redis.IncrBy(key, 10)
 
