@@ -71,6 +71,22 @@ func (s *RedisTestSuite) TestExpire(c *C) {
 	c.Assert(val, Equals, "")
 }
 
+func (s *RedisTestSuite) TestSetEx(c *C) {
+	key := randSeq(32)
+
+	c.Assert(redis.SetEx(key, 2, "1"), IsNil)
+
+	val, err := redis.Get(key)
+	c.Assert(err, IsNil)
+	c.Assert(val, Equals, "1")
+
+	time.Sleep(3 * time.Second)
+
+	val, err = redis.Get(key)
+	c.Assert(err, Not(IsNil))
+	c.Assert(val, Equals, "")
+}
+
 func (s *RedisTestSuite) TestRPush(c *C) {
 	key := randSeq(32)
 

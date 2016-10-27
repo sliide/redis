@@ -52,6 +52,15 @@ func Set(key string, value interface{}) (err error) {
 	return
 }
 
+func SetEx(key string, expire int, value interface{}) (err error) {
+	c := pool.Get()
+	defer c.Close()
+
+	_, err = c.Do("SETEX", key, expire, value)
+
+	return
+}
+
 func LPush(key string, value string) (err error) {
 	c := pool.Get()
 	defer c.Close()
