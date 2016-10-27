@@ -127,7 +127,6 @@ func Del(key string) (err error) {
 
 func MGet(keys []string) ([]string, error) {
 	c := pool.Get()
-
 	defer c.Close()
 
 	var args []interface{}
@@ -136,4 +135,18 @@ func MGet(keys []string) ([]string, error) {
 	}
 
 	return redis.Strings(c.Do("MGET", args...))
+}
+
+func ZAdd(key string, score float64, value interface{})  (int, error) {
+	c:= pool.Get()
+	defer c.Close()
+
+	return redis.Int(c.Do("ZADD", key, score, value))
+}
+
+func ZCount(key string, min interface{}, max interface{}) (int, error) {
+	c:= pool.Get()
+	defer c.Close()
+
+	return redis.Int(c.Do("ZCOUNT", key, min, max))
 }
