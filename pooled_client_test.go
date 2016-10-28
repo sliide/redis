@@ -69,7 +69,7 @@ func (s *RedisTestSuite) TestExpire(c *C) {
 	time.Sleep(2 * time.Second)
 
 	val, err = pc.Get(key)
-	c.Assert(err, Not(IsNil))
+	c.Assert(err, IsNil)
 	c.Assert(val, Equals, "")
 }
 
@@ -85,7 +85,7 @@ func (s *RedisTestSuite) TestSetEx(c *C) {
 	time.Sleep(3 * time.Second)
 
 	val, err = pc.Get(key)
-	c.Assert(err, Not(IsNil))
+	c.Assert(err, IsNil)
 	c.Assert(val, Equals, "")
 }
 
@@ -94,7 +94,7 @@ func (s *RedisTestSuite) TestRPush(c *C) {
 
 	for i := 0; i < 2; i++ {
 		err := pc.RPush(key, strconv.Itoa(i))
-		c.Assert(err, Equals, nil)
+		c.Assert(err, IsNil)
 	}
 
 	vals, err := pc.LRange(key)
@@ -113,54 +113,60 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	key2 := randSeq(32)
 
 	v, err := pc.Get(key)
-	c.Assert(err, Not(Equals), nil)
+	c.Assert(err, IsNil)
 
 	err = pc.Set(key, val)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	v, err = pc.Get(key)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val)
 
 	v, err = pc.Pop(pop)
-	c.Assert(err, Not(Equals), nil)
+	c.Assert(err, Not(IsNil))
 
 	err = pc.LPush(pop, val)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	err = pc.LPush(pop, val2)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	err = pc.LPush(pop, val3)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	v, err = pc.Pop(pop)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val3)
 
 	v, err = pc.Pop(pop)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val2)
 
 	v, err = pc.Pop(pop)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val)
 
 	err = pc.Set(key2, "2")
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	err = pc.Incr(key2)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	err = pc.Incr(key2)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	err = pc.Incr(key2)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 
 	v, err = pc.Get(key2)
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(v, Equals, "5")
+}
+
+func (s *RedisTestSuite) TestGetNonExistentKey(c *C) {
+	v, err := pc.Get("NotExsting")
+	c.Assert(err, IsNil)
+	c.Assert(v, Equals, "")
 }
 
 func (s *RedisTestSuite) TestMGet(c *C) {
