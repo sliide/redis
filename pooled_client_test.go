@@ -244,6 +244,12 @@ func (s *RedisTestSuite) TestZCount(c *C) {
 	c.Assert(count, Equals, 2)
 }
 
+func (s *RedisTestSuite) TestZCountNotExistentKey(c *C) {
+	count, err := pc.ZCount("NotExisting", "-inf", "+inf")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, 0)
+}
+
 // TODO: move it somewhere so we don't copy this everywhere
 func randSeq(n int) string {
 	rand.Seed(time.Now().UnixNano())
