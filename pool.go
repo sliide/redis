@@ -26,7 +26,7 @@ func newPool(server string) *redis.Pool {
 	}
 }
 
-func Init(redisURL string) (err error) {
+func Init(redisURL string) (error) {
 	pool = newPool(redisURL)
 	return nil
 }
@@ -35,90 +35,95 @@ func Close() {
 	pool.Close()
 }
 
-func Get(key string) (val string, err error) {
+func Get(key string) (string, error) {
 	c := pool.Get()
 	defer c.Close()
 
-	val, err = redis.String(c.Do("GET", key))
-	return
+	return redis.String(c.Do("GET", key))
 }
 
-func Set(key string, value interface{}) (err error) {
+func Set(key string, value interface{}) (error) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err = c.Do("SET", key, value)
+	_, err := c.Do("SET", key, value)
 
-	return
+	return err
 }
 
-func LPush(key string, value string) (err error) {
+func SetEx(key string, expire int, value interface{}) (error) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err = c.Do("LPUSH", key, value)
-	return
+	_, err := c.Do("SETEX", key, expire, value)
+
+	return err
 }
 
-func RPush(key string, value string) (err error) {
+func LPush(key string, value string) (error) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err = c.Do("RPUSH", key, value)
-	return
+	_, err := c.Do("LPUSH", key, value)
+	return err
 }
 
-func LRange(key string) (vals []string, err error) {
+func RPush(key string, value string) (error) {
 	c := pool.Get()
 	defer c.Close()
 
-	vals, err = redis.Strings(c.Do("LRANGE", key, 0, -1))
-	return vals, err
+	_, err := c.Do("RPUSH", key, value)
+	return err
 }
 
-func Pop(key string) (val string, err error) {
+func LRange(key string) ([]string, error) {
 	c := pool.Get()
 	defer c.Close()
 
-	val, err = redis.String(c.Do("LPOP", key))
-	return
+	return redis.Strings(c.Do("LRANGE", key, 0, -1))
 }
 
-func Incr(key string) (err error) {
+func Pop(key string) (string, error) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err = c.Do("INCR", key)
-	return
+	return redis.String(c.Do("LPOP", key))
 }
 
-func IncrBy(key string, inc interface{}) (val interface{}, err error) {
+func Incr(key string) (error) {
+	c := pool.Get()
+	defer c.Close()
+
+	_, err := c.Do("INCR", key)
+	return err
+}
+
+func IncrBy(key string, inc interface{}) (interface{}, error) {
 	c := pool.Get()
 	defer c.Close()
 
 	return c.Do("INCRBY", key, inc)
 }
 
-func Expire(key string, seconds int) (err error) {
+func Expire(key string, seconds int) (error) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err = c.Do("EXPIRE", key, seconds)
+	_, err := c.Do("EXPIRE", key, seconds)
 
 	return err
 }
 
-func Del(key string) (err error) {
+func Del(key string) (error) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err = redis.Bool(c.Do("DEL", key))
+	_, err := redis.Bool(c.Do("DEL", key))
 	return err
 }
 
 func MGet(keys []string) ([]string, error) {
 	c := pool.Get()
-
 	defer c.Close()
 
 	var args []interface{}
@@ -127,4 +132,18 @@ func MGet(keys []string) ([]string, error) {
 	}
 
 	return redis.Strings(c.Do("MGET", args...))
+}
+
+func ZAdd(key string, score float64, value interface{})  (int, error) {
+	c:= pool.Get()
+	defer c.Close()
+
+	return redis.Int(c.Do("ZADD", key, score, value))
+}
+
+func ZCount(key string, min interface{}, max interface{}) (int, error) {
+	c:= pool.Get()
+	defer c.Close()
+
+	return redis.Int(c.Do("ZCOUNT", key, min, max))
 }

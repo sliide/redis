@@ -71,6 +71,22 @@ func (s *RedisTestSuite) TestExpire(c *C) {
 	c.Assert(val, Equals, "")
 }
 
+func (s *RedisTestSuite) TestSetEx(c *C) {
+	key := randSeq(32)
+
+	c.Assert(redis.SetEx(key, 2, "1"), IsNil)
+
+	val, err := redis.Get(key)
+	c.Assert(err, IsNil)
+	c.Assert(val, Equals, "1")
+
+	time.Sleep(3 * time.Second)
+
+	val, err = redis.Get(key)
+	c.Assert(err, Not(IsNil))
+	c.Assert(val, Equals, "")
+}
+
 func (s *RedisTestSuite) TestRPush(c *C) {
 	key := randSeq(32)
 
@@ -193,6 +209,37 @@ func (s *RedisTestSuite) TestMGetWIthFailedKeys(c *C) {
 	c.Assert(values[0], Not(Equals), "")
 	c.Assert(values[1], Not(Equals), "")
 	c.Assert(values[2], Equals, "")
+}
+
+func (s *RedisTestSuite) TestZAdd(c *C) {
+	key := randSeq(32)
+	count, err := redis.ZAdd(key, 0.0, "a")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, 1)
+
+	count, err = redis.ZCount(key, "-inf", "+inf")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, 1)
+}
+
+func (s *RedisTestSuite) TestZCount(c *C) {
+	key := randSeq(32)
+	_, err := redis.ZAdd(key, -1.0, "a")
+	c.Assert(err, IsNil)
+	_, err = redis.ZAdd(key, 1.0, "b")
+	c.Assert(err, IsNil)
+
+	count, err := redis.ZCount(key, 0, "+inf")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, 1)
+
+	count, err = redis.ZCount(key, "-inf", 0)
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, 1)
+
+	count, err = redis.ZCount(key, -10, 10)
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, 2)
 }
 
 // TODO: move it somewhere so we don't copy this everywhere
