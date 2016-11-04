@@ -6,12 +6,12 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-type pooledClient struct {
+type PooledClient struct {
 	pool redis.Pool
 }
 
 func NewClient(server string) Client {
-	return &pooledClient{
+	return &PooledClient{
 		*newPool(server),
 	}
 }
@@ -34,11 +34,11 @@ func newPool(server string) *redis.Pool {
 	}
 }
 
-func (pc *pooledClient) Close() {
+func (pc *PooledClient) Close() {
 	pc.pool.Close()
 }
 
-func (pc *pooledClient) Get(key string) (string, error) {
+func (pc *PooledClient) Get(key string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -49,7 +49,7 @@ func (pc *pooledClient) Get(key string) (string, error) {
 	return val, err
 }
 
-func (pc *pooledClient) Set(key string, value interface{}) error {
+func (pc *PooledClient) Set(key string, value interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -57,7 +57,7 @@ func (pc *pooledClient) Set(key string, value interface{}) error {
 	return err
 }
 
-func (pc *pooledClient) SetEx(key string, expire int, value interface{}) error {
+func (pc *PooledClient) SetEx(key string, expire int, value interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -65,7 +65,7 @@ func (pc *pooledClient) SetEx(key string, expire int, value interface{}) error {
 	return err
 }
 
-func (pc *pooledClient) LPush(key string, value string) error {
+func (pc *PooledClient) LPush(key string, value string) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -73,7 +73,7 @@ func (pc *pooledClient) LPush(key string, value string) error {
 	return err
 }
 
-func (pc *pooledClient) RPush(key string, value string) error {
+func (pc *PooledClient) RPush(key string, value string) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -81,25 +81,25 @@ func (pc *pooledClient) RPush(key string, value string) error {
 	return err
 }
 
-func (pc *pooledClient) LRange(key string) ([]string, error) {
+func (pc *PooledClient) LRange(key string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Strings(c.Do("LRANGE", key, 0, -1))
 }
 
-func (pc *pooledClient) Pop(key string) (string, error) {
+func (pc *PooledClient) Pop(key string) (string, error) {
 	return pc.LPop(key)
 }
 
-func (pc *pooledClient) LPop(key string) (string, error) {
+func (pc *PooledClient) LPop(key string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.String(c.Do("LPOP", key))
 }
 
-func (pc *pooledClient) Incr(key string) error {
+func (pc *PooledClient) Incr(key string) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -107,14 +107,14 @@ func (pc *pooledClient) Incr(key string) error {
 	return err
 }
 
-func (pc *pooledClient) IncrBy(key string, inc interface{}) (interface{}, error) {
+func (pc *PooledClient) IncrBy(key string, inc interface{}) (interface{}, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return c.Do("INCRBY", key, inc)
 }
 
-func (pc *pooledClient) Expire(key string, seconds int) error {
+func (pc *PooledClient) Expire(key string, seconds int) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -122,7 +122,7 @@ func (pc *pooledClient) Expire(key string, seconds int) error {
 	return err
 }
 
-func (pc *pooledClient) Del(key string) error {
+func (pc *PooledClient) Del(key string) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -130,7 +130,7 @@ func (pc *pooledClient) Del(key string) error {
 	return err
 }
 
-func (pc *pooledClient) MGet(keys []string) ([]string, error) {
+func (pc *PooledClient) MGet(keys []string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -142,14 +142,14 @@ func (pc *pooledClient) MGet(keys []string) ([]string, error) {
 	return redis.Strings(c.Do("MGET", args...))
 }
 
-func (pc *pooledClient) ZAdd(key string, score float64, value interface{}) (int, error) {
+func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int(c.Do("ZADD", key, score, value))
 }
 
-func (pc *pooledClient) ZCount(key string, min interface{}, max interface{}) (int, error) {
+func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (int, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 

@@ -30,7 +30,7 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 	value, ok := dc.Keys[key]
 
 	if !ok {
-		return "", errors.New("Key not found")
+		return "", nil
 	}
 
 	expire, ok := dc.Expires[key]
