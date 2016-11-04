@@ -20,7 +20,7 @@ var _ = Suite(
 var inMemoryRedis redis.Client
 
 func (s *InMemoryRedisTestSuite) SetUpSuite(c *C) {
-	inMemoryRedis = redis.NewInMemoryClient("localhost:6379")
+	inMemoryRedis = redis.NewInMemoryClient()
 }
 
 func (s *InMemoryRedisTestSuite) TearDownSuite(c *C) {

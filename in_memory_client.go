@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func NewInMemoryClient(server string) Client {
+func NewInMemoryClient() Client {
 	return &InMemoryClient{
 		Keys:    map[string]interface{}{},
 		Expires: map[string]time.Time{},
