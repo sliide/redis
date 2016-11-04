@@ -1,6 +1,27 @@
 package redis
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
+
+func ValueToString(value interface{}) string {
+	switch value.(type) {
+	case string:
+		return value.(string)
+	case int:
+		return fmt.Sprintf("%d", value.(int))
+	case int32:
+		return fmt.Sprintf("%d", value.(int32))
+	case int64:
+		return fmt.Sprintf("%d", value.(int64))
+	case float32:
+		return fmt.Sprintf("%f", value.(float32))
+	case float64:
+		return fmt.Sprintf("%f", value.(float64))
+	}
+	return ""
+}
 
 func NumberToFloat64(value interface{}) float64 {
 	var returnValue float64

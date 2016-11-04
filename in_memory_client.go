@@ -184,7 +184,7 @@ func (dc *InMemoryClient) MGet(keys []string) ([]string, error) {
 
 	for _, key := range keys {
 		if value, ok := dc.Keys[key]; ok {
-			values = append(values, value.(string))
+			values = append(values, ValueToString(value))
 		} else {
 			values = append(values, "")
 		}
