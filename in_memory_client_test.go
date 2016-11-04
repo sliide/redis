@@ -2,9 +2,7 @@ package redis_test
 
 import (
 	"fmt"
-	"log"
 	"strconv"
-	"testing"
 
 	"github.com/sliide/redis"
 
@@ -13,95 +11,90 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func Test(t *testing.T) { TestingT(t) }
+//func Test(t *testing.T) { TestingT(t) }
 
-type RedisTestSuite struct{}
+type InMemoryRedisTestSuite struct{}
 
 var _ = Suite(
-	&RedisTestSuite{},
+	&InMemoryRedisTestSuite{},
 )
 
-var pc redis.Client
+var inMemoryRedis redis.Client
 
-func (s *RedisTestSuite) SetUpSuite(c *C) {
-	pc = redis.NewClient("localhost:6379")
+func (s *InMemoryRedisTestSuite) SetUpSuite(c *C) {
+	inMemoryRedis = redis.NewInMemoryClient("localhost:6379")
 }
 
-func (s *RedisTestSuite) TearDownSuite(c *C) {
-	pc.Close()
+func (s *InMemoryRedisTestSuite) TearDownSuite(c *C) {
+	inMemoryRedis.Close()
 }
 
-func (s *RedisTestSuite) TestIncrBy(c *C) {
+func (s *InMemoryRedisTestSuite) TestIncrBy(c *C) {
 	key := redis.RandSeq(32)
 
-	incrVal, err := pc.IncrBy(key, 10)
+	incrVal, err := inMemoryRedis.IncrBy(key, 10)
 	c.Assert(err, IsNil)
 	c.Assert(incrVal, Equals, int64(10))
 
-	c.Assert(pc.Set(key, 1), IsNil)
-	newVal, err := pc.IncrBy(key, 10)
+	c.Assert(inMemoryRedis.Set(key, 1), IsNil)
+	newVal, err := inMemoryRedis.IncrBy(key, 10)
 
 	c.Assert(err, IsNil)
-
 	c.Assert(newVal, Equals, int64(11))
 
-	val, err := pc.Get(key)
-
-	if err != nil {
-		log.Println(err)
-		c.Fail()
-	}
+	val, err := inMemoryRedis.Get(key)
+	c.Assert(err, IsNil)
 
 	c.Assert(val, Equals, strconv.Itoa(11))
 }
 
-func (s *RedisTestSuite) TestExpire(c *C) {
+func (s *InMemoryRedisTestSuite) TestExpire(c *C) {
 	key := redis.RandSeq(32)
 
-	c.Assert(pc.Set(key, "1"), IsNil)
+	c.Assert(inMemoryRedis.Set(key, "1"), IsNil)
 
-	val, err := pc.Get(key)
+	val, err := inMemoryRedis.Get(key)
 	c.Assert(err, IsNil)
 	c.Assert(val, Equals, "1")
 
-	c.Assert(pc.Expire(key, 1), IsNil)
+	c.Assert(inMemoryRedis.Expire(key, 1), IsNil)
 	time.Sleep(2 * time.Second)
 
-	val, err = pc.Get(key)
+	val, err = inMemoryRedis.Get(key)
 	c.Assert(err, IsNil)
 	c.Assert(val, Equals, "")
 }
 
-func (s *RedisTestSuite) TestSetEx(c *C) {
+func (s *InMemoryRedisTestSuite) TestSetEx(c *C) {
 	key := redis.RandSeq(32)
 
-	c.Assert(pc.SetEx(key, 2, "1"), IsNil)
+	c.Assert(inMemoryRedis.SetEx(key, 2, "1"), IsNil)
 
-	val, err := pc.Get(key)
+	val, err := inMemoryRedis.Get(key)
 	c.Assert(err, IsNil)
 	c.Assert(val, Equals, "1")
 
 	time.Sleep(3 * time.Second)
 
-	val, err = pc.Get(key)
+	val, err = inMemoryRedis.Get(key)
 	c.Assert(err, IsNil)
 	c.Assert(val, Equals, "")
 }
 
-func (s *RedisTestSuite) TestRPush(c *C) {
+func (s *InMemoryRedisTestSuite) TestRPush(c *C) {
 	key := redis.RandSeq(32)
 
 	for i := 0; i < 2; i++ {
-		err := pc.RPush(key, strconv.Itoa(i))
+		err := inMemoryRedis.RPush(key, strconv.Itoa(i))
 		c.Assert(err, IsNil)
 	}
 
-	vals, err := pc.LRange(key)
+	vals, err := inMemoryRedis.LRange(key)
 	c.Assert(err, IsNil)
 	c.Assert(vals, DeepEquals, []string{"0", "1"})
 }
 
-func (s *RedisTestSuite) TestRedis(c *C) {
+func (s *InMemoryRedisTestSuite) TestRedis(c *C) {
 
 	key := redis.RandSeq(32)
 	pop := redis.RandSeq(32)
@@ -111,78 +104,78 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 
 	key2 := redis.RandSeq(32)
 
-	v, err := pc.Get(key)
+	v, err := inMemoryRedis.Get(key)
 	c.Assert(err, IsNil)
 
-	err = pc.Set(key, val)
+	err = inMemoryRedis.Set(key, val)
 	c.Assert(err, IsNil)
 
-	v, err = pc.Get(key)
+	v, err = inMemoryRedis.Get(key)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val)
 
-	v, err = pc.Pop(pop)
+	v, err = inMemoryRedis.Pop(pop)
 	c.Assert(err, Not(IsNil))
 
-	err = pc.LPush(pop, val)
+	err = inMemoryRedis.LPush(pop, val)
 	c.Assert(err, IsNil)
 
-	err = pc.LPush(pop, val2)
+	err = inMemoryRedis.LPush(pop, val2)
 	c.Assert(err, IsNil)
 
-	err = pc.LPush(pop, val3)
+	err = inMemoryRedis.LPush(pop, val3)
 	c.Assert(err, IsNil)
 
-	v, err = pc.Pop(pop)
+	v, err = inMemoryRedis.Pop(pop)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val3)
 
-	v, err = pc.Pop(pop)
+	v, err = inMemoryRedis.Pop(pop)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val2)
 
-	v, err = pc.Pop(pop)
+	v, err = inMemoryRedis.Pop(pop)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val)
 
-	err = pc.Set(key2, "2")
+	err = inMemoryRedis.Set(key2, "2")
 	c.Assert(err, IsNil)
 
-	err = pc.Incr(key2)
+	err = inMemoryRedis.Incr(key2)
 	c.Assert(err, IsNil)
 
-	err = pc.Incr(key2)
+	err = inMemoryRedis.Incr(key2)
 	c.Assert(err, IsNil)
 
-	err = pc.Incr(key2)
+	err = inMemoryRedis.Incr(key2)
 	c.Assert(err, IsNil)
 
-	v, err = pc.Get(key2)
+	v, err = inMemoryRedis.Get(key2)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, "5")
 }
 
-func (s *RedisTestSuite) TestGetNonExistentKey(c *C) {
-	v, err := pc.Get("NotExsting")
+func (s *InMemoryRedisTestSuite) TestGetNonExistentKey(c *C) {
+	v, err := inMemoryRedis.Get("NotExsting")
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, "")
 }
 
-func (s *RedisTestSuite) TestMGet(c *C) {
+func (s *InMemoryRedisTestSuite) TestMGet(c *C) {
 
 	keys := []string{}
 	for i := 0; i < 5; i++ {
 		key := redis.RandSeq(10)
-		pc.Set(key, fmt.Sprintf("%d", i))
+		inMemoryRedis.Set(key, fmt.Sprintf("%d", i))
 		keys = append(keys, key)
 	}
 
-	values, err := pc.MGet(keys)
+	values, err := inMemoryRedis.MGet(keys)
 	c.Assert(err, IsNil)
 
 	expectedValues := []string{}
 	for _, key := range keys {
-		val, err := pc.Get(key)
+		val, err := inMemoryRedis.Get(key)
 		c.Assert(err, IsNil)
 		expectedValues = append(expectedValues, val)
 	}
@@ -193,7 +186,7 @@ func (s *RedisTestSuite) TestMGet(c *C) {
 	}
 }
 
-func (s *RedisTestSuite) TestMGetWIthFailedKeys(c *C) {
+func (s *InMemoryRedisTestSuite) TestMGetWIthFailedKeys(c *C) {
 	keyValMap := map[string]string{
 		redis.RandSeq(10): redis.RandSeq(10),
 		redis.RandSeq(10): redis.RandSeq(10),
@@ -203,12 +196,12 @@ func (s *RedisTestSuite) TestMGetWIthFailedKeys(c *C) {
 	for key, val := range keyValMap {
 		keys = append(keys, key)
 
-		pc.Set(key, val)
+		inMemoryRedis.Set(key, val)
 	}
 
 	keys = append(keys, "THISDOESNOTEXIST")
 
-	values, err := pc.MGet(keys)
+	values, err := inMemoryRedis.MGet(keys)
 
 	c.Assert(err, IsNil)
 
@@ -218,39 +211,39 @@ func (s *RedisTestSuite) TestMGetWIthFailedKeys(c *C) {
 	c.Assert(values[2], Equals, "")
 }
 
-func (s *RedisTestSuite) TestZAdd(c *C) {
+func (s *InMemoryRedisTestSuite) TestZAdd(c *C) {
 	key := redis.RandSeq(32)
-	count, err := pc.ZAdd(key, 0.0, "a")
+	count, err := inMemoryRedis.ZAdd(key, 0.0, "a")
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 1)
 
-	count, err = pc.ZCount(key, "-inf", "+inf")
+	count, err = inMemoryRedis.ZCount(key, "-inf", "+inf")
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 1)
 }
 
-func (s *RedisTestSuite) TestZCount(c *C) {
+func (s *InMemoryRedisTestSuite) TestZCount(c *C) {
 	key := redis.RandSeq(32)
-	_, err := pc.ZAdd(key, -1.0, "a")
+	_, err := inMemoryRedis.ZAdd(key, -1.0, "a")
 	c.Assert(err, IsNil)
-	_, err = pc.ZAdd(key, 1.0, "b")
+	_, err = inMemoryRedis.ZAdd(key, 1.0, "b")
 	c.Assert(err, IsNil)
 
-	count, err := pc.ZCount(key, 0, "+inf")
+	count, err := inMemoryRedis.ZCount(key, 0, "+inf")
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 1)
 
-	count, err = pc.ZCount(key, "-inf", 0)
+	count, err = inMemoryRedis.ZCount(key, "-inf", 0)
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 1)
 
-	count, err = pc.ZCount(key, -10, 10)
+	count, err = inMemoryRedis.ZCount(key, -10, 10)
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 2)
 }
 
-func (s *RedisTestSuite) TestZCountNotExistentKey(c *C) {
-	count, err := pc.ZCount("NotExisting", "-inf", "+inf")
+func (s *InMemoryRedisTestSuite) TestZCountNotExistentKey(c *C) {
+	count, err := inMemoryRedis.ZCount("NotExisting", "-inf", "+inf")
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 0)
 }
