@@ -3,6 +3,7 @@ package redis_test
 import (
 	"fmt"
 	"strconv"
+	"testing"
 
 	"github.com/sliide/redis"
 
@@ -11,7 +12,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-//func Test(t *testing.T) { TestingT(t) }
+func Test(t *testing.T) { TestingT(t) }
 
 type InMemoryRedisTestSuite struct{}
 
