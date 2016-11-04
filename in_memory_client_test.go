@@ -3,7 +3,6 @@ package redis_test
 import (
 	"fmt"
 	"strconv"
-	"testing"
 
 	"github.com/sliide/redis"
 
@@ -11,8 +10,6 @@ import (
 
 	. "gopkg.in/check.v1"
 )
-
-func Test(t *testing.T) { TestingT(t) }
 
 type InMemoryRedisTestSuite struct{}
 
@@ -31,7 +28,7 @@ func (s *InMemoryRedisTestSuite) TearDownSuite(c *C) {
 }
 
 func (s *InMemoryRedisTestSuite) TestIncrBy(c *C) {
-	key := redis.RandSeq(32)
+	key := RandSeq(32)
 
 	incrVal, err := inMemoryRedis.IncrBy(key, 10)
 	c.Assert(err, IsNil)
@@ -50,7 +47,7 @@ func (s *InMemoryRedisTestSuite) TestIncrBy(c *C) {
 }
 
 func (s *InMemoryRedisTestSuite) TestExpire(c *C) {
-	key := redis.RandSeq(32)
+	key := RandSeq(32)
 
 	c.Assert(inMemoryRedis.Set(key, "1"), IsNil)
 
@@ -67,7 +64,7 @@ func (s *InMemoryRedisTestSuite) TestExpire(c *C) {
 }
 
 func (s *InMemoryRedisTestSuite) TestSetEx(c *C) {
-	key := redis.RandSeq(32)
+	key := RandSeq(32)
 
 	c.Assert(inMemoryRedis.SetEx(key, 2, "1"), IsNil)
 
@@ -83,7 +80,7 @@ func (s *InMemoryRedisTestSuite) TestSetEx(c *C) {
 }
 
 func (s *InMemoryRedisTestSuite) TestRPush(c *C) {
-	key := redis.RandSeq(32)
+	key := RandSeq(32)
 
 	for i := 0; i < 2; i++ {
 		err := inMemoryRedis.RPush(key, strconv.Itoa(i))
@@ -97,13 +94,13 @@ func (s *InMemoryRedisTestSuite) TestRPush(c *C) {
 
 func (s *InMemoryRedisTestSuite) TestRedis(c *C) {
 
-	key := redis.RandSeq(32)
-	pop := redis.RandSeq(32)
-	val := redis.RandSeq(32)
-	val2 := redis.RandSeq(32)
-	val3 := redis.RandSeq(32)
+	key := RandSeq(32)
+	pop := RandSeq(32)
+	val := RandSeq(32)
+	val2 := RandSeq(32)
+	val3 := RandSeq(32)
 
-	key2 := redis.RandSeq(32)
+	key2 := RandSeq(32)
 
 	v, err := inMemoryRedis.Get(key)
 	c.Assert(err, IsNil)
@@ -166,7 +163,7 @@ func (s *InMemoryRedisTestSuite) TestMGet(c *C) {
 
 	keys := []string{}
 	for i := 0; i < 5; i++ {
-		key := redis.RandSeq(10)
+		key := RandSeq(10)
 		inMemoryRedis.Set(key, fmt.Sprintf("%d", i))
 		keys = append(keys, key)
 	}
@@ -189,8 +186,8 @@ func (s *InMemoryRedisTestSuite) TestMGet(c *C) {
 
 func (s *InMemoryRedisTestSuite) TestMGetWIthFailedKeys(c *C) {
 	keyValMap := map[string]string{
-		redis.RandSeq(10): redis.RandSeq(10),
-		redis.RandSeq(10): redis.RandSeq(10),
+		RandSeq(10): RandSeq(10),
+		RandSeq(10): RandSeq(10),
 	}
 	keys := []string{}
 
@@ -213,7 +210,7 @@ func (s *InMemoryRedisTestSuite) TestMGetWIthFailedKeys(c *C) {
 }
 
 func (s *InMemoryRedisTestSuite) TestZAdd(c *C) {
-	key := redis.RandSeq(32)
+	key := RandSeq(32)
 	count, err := inMemoryRedis.ZAdd(key, 0.0, "a")
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 1)
@@ -224,7 +221,7 @@ func (s *InMemoryRedisTestSuite) TestZAdd(c *C) {
 }
 
 func (s *InMemoryRedisTestSuite) TestZCount(c *C) {
-	key := redis.RandSeq(32)
+	key := RandSeq(32)
 	_, err := inMemoryRedis.ZAdd(key, -1.0, "a")
 	c.Assert(err, IsNil)
 	_, err = inMemoryRedis.ZAdd(key, 1.0, "b")
