@@ -42,11 +42,7 @@ func (pc *PooledClient) Get(key string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	val, err := redis.String(c.Do("GET", key))
-	if err == redis.ErrNil {
-		err = nil
-	}
-	return val, err
+	return redis.String(c.Do("GET", key))
 }
 
 func (pc *PooledClient) Set(key string, value interface{}) error {

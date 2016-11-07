@@ -2,7 +2,6 @@ package redis_test
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -59,12 +58,7 @@ func (s *RedisTestSuite) TestIncrBy(c *C) {
 	c.Assert(newVal, Equals, int64(11))
 
 	val, err := pc.Get(key)
-
-	if err != nil {
-		log.Println(err)
-		c.Fail()
-	}
-
+	c.Assert(err, IsNil)
 	c.Assert(val, Equals, strconv.Itoa(11))
 }
 
@@ -81,7 +75,7 @@ func (s *RedisTestSuite) TestExpire(c *C) {
 	time.Sleep(2 * time.Second)
 
 	val, err = pc.Get(key)
-	c.Assert(err, IsNil)
+	c.Assert(err, Not(IsNil))
 	c.Assert(val, Equals, "")
 }
 
@@ -97,7 +91,7 @@ func (s *RedisTestSuite) TestSetEx(c *C) {
 	time.Sleep(3 * time.Second)
 
 	val, err = pc.Get(key)
-	c.Assert(err, IsNil)
+	c.Assert(err, Not(IsNil))
 	c.Assert(val, Equals, "")
 }
 
@@ -125,7 +119,7 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	key2 := RandSeq(32)
 
 	v, err := pc.Get(key)
-	c.Assert(err, IsNil)
+	c.Assert(err, Not(IsNil))
 
 	err = pc.Set(key, val)
 	c.Assert(err, IsNil)
@@ -177,7 +171,7 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 
 func (s *RedisTestSuite) TestGetNonExistentKey(c *C) {
 	v, err := pc.Get("NotExsting")
-	c.Assert(err, IsNil)
+	c.Assert(err, Not(IsNil))
 	c.Assert(v, Equals, "")
 }
 
