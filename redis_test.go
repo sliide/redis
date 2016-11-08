@@ -222,6 +222,10 @@ func (s *RedisTestSuite) TestZAdd(c *C) {
 	count, err = s.client.ZCount(key, "-inf", "+inf")
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, 1)
+
+	count, err = s.client.ZAdd(key, 0.0, "a")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, 0)
 }
 
 func (s *RedisTestSuite) TestZCount(c *C) {

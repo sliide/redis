@@ -212,6 +212,13 @@ func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (in
 		return 0, errors.New("Couldn't convert to type")
 	}
 
+	// don't append if value exists on set.
+	for i := 0; i < len(currentSet); i++ {
+		if scoreAndValue[0] == currentSet[i][0] && scoreAndValue[1] == currentSet[i][1] {
+			return 0, nil
+		}
+	}
+
 	// bubble sort
 	for i := 0; i < len(currentSet); i++ {
 		for j := i; j < len(currentSet); j++ {
