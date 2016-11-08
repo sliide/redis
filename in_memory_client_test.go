@@ -103,7 +103,7 @@ func (s *InMemoryRedisTestSuite) TestRedis(c *C) {
 	key2 := RandSeq(32)
 
 	v, err := inMemoryRedis.Get(key)
-	c.Assert(err, IsNil)
+	c.Assert(err, Not(IsNil))
 
 	err = inMemoryRedis.Set(key, val)
 	c.Assert(err, IsNil)
@@ -155,7 +155,7 @@ func (s *InMemoryRedisTestSuite) TestRedis(c *C) {
 
 func (s *InMemoryRedisTestSuite) TestGetNonExistentKey(c *C) {
 	v, err := inMemoryRedis.Get("NotExsting")
-	c.Assert(err, IsNil)
+	c.Assert(err, Not(IsNil))
 	c.Assert(v, Equals, "")
 }
 
