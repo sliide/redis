@@ -30,7 +30,7 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 	value, ok := dc.Keys[key]
 
 	if !ok {
-		return "", errors.New("Not found")
+		return "", errors.New("redigo: nil returned")
 	}
 
 	expire, ok := dc.Expires[key]
@@ -47,7 +47,7 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 	}
 
 	if time.Now().After(expire) {
-		return "", errors.New("Not found")
+		return "", errors.New("redigo: nil returned")
 	}
 
 	return value.(string), nil
