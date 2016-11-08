@@ -28,26 +28,19 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 	defer dc.mu.Unlock()
 
 	value, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
 
-	if !ok {
+	if !ok || (hasExpire && time.Now().After(expire)) {
 		return "", errors.New("redigo: nil returned")
 	}
 
-	expire, ok := dc.Expires[key]
-
-	if !ok {
-		switch value.(type) {
-		case string:
-			return value.(string), nil
-		case int:
-			return fmt.Sprintf("%d", value.(int)), nil
-		case int64:
-			return fmt.Sprintf("%d", value.(int64)), nil
-		}
-	}
-
-	if time.Now().After(expire) {
-		return "", errors.New("redigo: nil returned")
+	switch value.(type) {
+	case string:
+		return value.(string), nil
+	case int:
+		return fmt.Sprintf("%d", value.(int)), nil
+	case int64:
+		return fmt.Sprintf("%d", value.(int64)), nil
 	}
 
 	return value.(string), nil
@@ -118,8 +111,9 @@ func (dc *InMemoryClient) LPop(key string) (val string, err error) {
 	defer dc.mu.Unlock()
 
 	values, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
 
-	if !ok {
+	if !ok || (hasExpire && time.Now().After(expire)) {
 		return "", errors.New("Key not found")
 	}
 
@@ -145,10 +139,11 @@ func (dc *InMemoryClient) IncrBy(key string, inc interface{}) (val interface{}, 
 	defer dc.mu.Unlock()
 
 	value, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
 
 	var incrValue = NumberToInt64(inc)
 
-	if !ok {
+	if !ok || (hasExpire && time.Now().After(expire)) {
 		dc.Keys[key] = incrValue
 		return incrValue, nil
 	}
@@ -183,10 +178,13 @@ func (dc *InMemoryClient) MGet(keys []string) ([]string, error) {
 	values := []string{}
 
 	for _, key := range keys {
-		if value, ok := dc.Keys[key]; ok {
-			values = append(values, ValueToString(value))
-		} else {
+		value, ok := dc.Keys[key]
+		expire, hasExpire := dc.Expires[key]
+
+		if !ok || (hasExpire && time.Now().After(expire)) {
 			values = append(values, "")
+		} else {
+			values = append(values, ValueToString(value))
 		}
 	}
 
@@ -200,8 +198,9 @@ func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (in
 	scoreAndValue := []interface{}{score, value}
 
 	value, ok := dc.Keys[key].([][]interface{})
+	expire, hasExpire := dc.Expires[key]
 
-	if !ok {
+	if !ok || (hasExpire && time.Now().After(expire)) {
 		dc.Keys[key] = [][]interface{}{
 			scoreAndValue,
 		}
@@ -231,8 +230,9 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 	defer dc.mu.Unlock()
 
 	value, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
 
-	if !ok {
+	if !ok || (hasExpire && time.Now().After(expire)) {
 		return 0, nil
 	}
 
