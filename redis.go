@@ -6,6 +6,10 @@ func SetClient(redisClient Client) {
 	client = redisClient
 }
 
+func Init(connectionString string) error {
+	client = NewClient(connectionString)
+}
+
 func Close() {
 	client.Close()
 }
