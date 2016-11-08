@@ -8,6 +8,7 @@ func SetClient(redisClient Client) {
 
 func Init(connectionString string) error {
 	client = NewClient(connectionString)
+	return nil
 }
 
 func Close() {
