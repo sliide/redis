@@ -47,7 +47,7 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 	}
 
 	if time.Now().After(expire) {
-		return "", nil
+		return "", errors.New("Not found")
 	}
 
 	return value.(string), nil
