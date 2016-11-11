@@ -2,7 +2,6 @@ package redis
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -34,16 +33,7 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 		return "", errors.New("redigo: nil returned")
 	}
 
-	switch value.(type) {
-	case string:
-		return value.(string), nil
-	case int:
-		return fmt.Sprintf("%d", value.(int)), nil
-	case int64:
-		return fmt.Sprintf("%d", value.(int64)), nil
-	}
-
-	return value.(string), nil
+	return ValueToString(value), nil
 }
 
 func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
