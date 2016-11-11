@@ -51,6 +51,7 @@ func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
 	defer dc.mu.Unlock()
 
 	dc.Keys[key] = value
+	delete(dc.Expires, key)
 	return nil
 }
 
@@ -79,6 +80,7 @@ func (dc *InMemoryClient) LPush(key string, value string) (length int64, err err
 	}
 
 	dc.Keys[key] = append([]string{value}, array...)
+	delete(dc.Expires, key)
 	return int64(len(array) + 1), nil
 }
 
@@ -96,6 +98,7 @@ func (dc *InMemoryClient) RPush(key string, value string) (length int64, err err
 	}
 
 	dc.Keys[key] = append(array, value)
+	delete(dc.Expires, key)
 	return int64(len(array) + 1), nil
 }
 
@@ -294,7 +297,6 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 
 			count += 1
 		}
-
 	}
 
 	return count, nil

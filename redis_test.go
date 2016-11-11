@@ -31,6 +31,37 @@ type RedisTestSuite struct {
 	client redis.Client
 }
 
+func (s *RedisTestSuite) TestGetSetDelMGetConcurrentAccess(c *C) {
+
+	loopSize := 100
+	key := RandSeq(32)
+
+	go func() {
+		for i := 0; i < loopSize; i++ {
+			go s.client.Set(key, 32)
+		}
+	}()
+
+	go func() {
+		for i := 0; i < loopSize; i++ {
+			go s.client.Del(key)
+		}
+	}()
+
+	go func() {
+		for i := 0; i < loopSize; i++ {
+			go s.client.Get(key)
+		}
+	}()
+
+	go func() {
+		for i := 0; i < loopSize; i++ {
+			go s.client.MGet(key, key, key, key)
+		}
+	}()
+
+}
+
 func (s *RedisTestSuite) TestIncrBy(c *C) {
 	key := RandSeq(32)
 
@@ -269,4 +300,16 @@ func (s *RedisTestSuite) TestZCountNotExistentKey(c *C) {
 	count, err := s.client.ZCount("NotExisting", "-inf", "+inf")
 	c.Assert(err, IsNil)
 	c.Assert(count, Equals, int64(0))
+}
+
+func (s *RedisTestSuite) TestSetResetsExpire(c *C) {
+	key := RandSeq(32)
+	s.client.SetEx(key, 1, 1)
+	s.client.Set(key, 1)
+
+	time.Sleep(2 * time.Second)
+	v, err := s.client.Get(key)
+
+	c.Assert(err, IsNil)
+	c.Assert(v, Equals, "1")
 }
