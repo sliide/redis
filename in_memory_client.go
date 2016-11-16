@@ -73,7 +73,11 @@ func (dc *InMemoryClient) LPush(key string, value string) (length int64, err err
 		return 1, nil
 	}
 
-	array := values.([]string)
+	array, ok := values.([]string)
+	if !ok {
+		return 0, errors.New("Can not push into a non list")
+	}
+
 	dc.Keys[key] = append([]string{value}, array...)
 	return int64(len(array) + 1), nil
 }
@@ -86,7 +90,10 @@ func (dc *InMemoryClient) RPush(key string, value string) (length int64, err err
 		dc.Keys[key] = []string{value}
 		return 1, nil
 	}
-	array := dc.Keys[key].([]string)
+	array, ok := dc.Keys[key].([]string)
+	if !ok {
+		return 0, errors.New("Can not push into a non list")
+	}
 
 	dc.Keys[key] = append(array, value)
 	return int64(len(array) + 1), nil
