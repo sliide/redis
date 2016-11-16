@@ -59,12 +59,22 @@ func (s *RedisTestSuite) TestExpire(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(val, Equals, "1")
 
-	c.Assert(s.client.Expire(key, 1), IsNil)
+	set, err := s.client.Expire(key, 1)
+	c.Assert(set, Equals, true)
+	c.Assert(err, IsNil)
 	time.Sleep(2 * time.Second)
 
 	val, err = s.client.Get(key)
 	c.Assert(err, Not(IsNil))
 	c.Assert(val, Equals, "")
+}
+
+func (s *RedisTestSuite) TestExpireNotExistingKey(c *C) {
+	key := RandSeq(32)
+
+	set, err := s.client.Expire(key, 1)
+	c.Assert(set, Equals, false)
+	c.Assert(err, IsNil)
 }
 
 func (s *RedisTestSuite) TestSetEx(c *C) {

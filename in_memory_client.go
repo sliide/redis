@@ -151,12 +151,16 @@ func (dc *InMemoryClient) IncrBy(key string, inc interface{}) (val interface{}, 
 	return incrValue, nil
 }
 
-func (dc *InMemoryClient) Expire(key string, expire int64) (err error) {
+func (dc *InMemoryClient) Expire(key string, expire int64) (bool, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
+	if _, exists := dc.Keys[key]; !exists {
+		return false, nil
+	}
+
 	dc.Expires[key] = time.Now().Add(time.Duration(expire) * time.Second)
-	return nil
+	return true, nil
 }
 
 func (dc *InMemoryClient) Del(keys ...string) (count int64, err error) {

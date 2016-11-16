@@ -106,12 +106,12 @@ func (pc *PooledClient) IncrBy(key string, inc interface{}) (interface{}, error)
 	return c.Do("INCRBY", key, inc)
 }
 
-func (pc *PooledClient) Expire(key string, seconds int64) error {
+func (pc *PooledClient) Expire(key string, seconds int64) (bool, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("EXPIRE", key, seconds)
-	return err
+	result, err := redis.Int(c.Do("EXPIRE", key, seconds))
+	return result == 1, err
 }
 
 func (pc *PooledClient) Del(keys ...string) (int64, error) {

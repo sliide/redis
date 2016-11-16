@@ -32,7 +32,8 @@ func SetEx(key string, expire int64, value interface{}) error {
 }
 
 func Expire(key string, seconds int64) error {
-	return client.Expire(key, seconds)
+	_, err := client.Expire(key, seconds)
+	return err
 }
 
 func Del(key string) error {
