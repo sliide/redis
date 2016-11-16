@@ -63,33 +63,33 @@ func (dc *InMemoryClient) SetEx(key string, expire int64, value interface{}) (er
 	return nil
 }
 
-func (dc *InMemoryClient) LPush(key string, value string) (err error) {
+func (dc *InMemoryClient) LPush(key string, value string) (length int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
 	values, ok := dc.Keys[key]
 	if !ok {
 		dc.Keys[key] = []string{value}
-		return nil
+		return 1, nil
 	}
 
 	array := values.([]string)
 	dc.Keys[key] = append([]string{value}, array...)
-	return nil
+	return int64(len(array) + 1), nil
 }
 
-func (dc *InMemoryClient) RPush(key string, value string) (err error) {
+func (dc *InMemoryClient) RPush(key string, value string) (length int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
 	if _, ok := dc.Keys[key]; !ok {
 		dc.Keys[key] = []string{value}
-		return
+		return 1, nil
 	}
 	array := dc.Keys[key].([]string)
 
 	dc.Keys[key] = append(array, value)
-	return nil
+	return int64(len(array) + 1), nil
 }
 
 func (dc *InMemoryClient) LRange(key string) (vals []string, err error) {
@@ -125,9 +125,8 @@ func (dc *InMemoryClient) LPop(key string) (val string, err error) {
 	return returnValue, nil
 }
 
-func (dc *InMemoryClient) Incr(key string) (err error) {
-	dc.IncrBy(key, 1)
-	return nil
+func (dc *InMemoryClient) Incr(key string) (val int64, err error) {
+	return dc.IncrBy(key, 1)
 }
 
 func (dc *InMemoryClient) IncrBy(key string, inc int64) (val int64, err error) {

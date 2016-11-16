@@ -46,11 +46,13 @@ func Del(key string) error {
 }
 
 func LPush(key string, value string) error {
-	return client.LPush(key, value)
+	_, err := client.LPush(key, value)
+	return err
 }
 
 func RPush(key string, value string) error {
-	return client.RPush(key, value)
+	_, err := client.RPush(key, value)
+	return err
 }
 
 func LRange(key string) ([]string, error) {
@@ -66,7 +68,8 @@ func Pop(key string) (string, error) {
 }
 
 func Incr(key string) error {
-	return client.Incr(key)
+	_, err := client.Incr(key)
+	return err
 }
 
 func IncrBy(key string, inc interface{}) (interface{}, error) {

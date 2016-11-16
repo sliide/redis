@@ -97,7 +97,8 @@ func (s *RedisTestSuite) TestRPush(c *C) {
 	key := RandSeq(32)
 
 	for i := 0; i < 2; i++ {
-		err := s.client.RPush(key, strconv.Itoa(i))
+		count, err := s.client.RPush(key, strconv.Itoa(i))
+		c.Assert(count, Equals, int64(i + 1))
 		c.Assert(err, IsNil)
 	}
 
@@ -129,14 +130,17 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	v, err = s.client.LPop(pop)
 	c.Assert(err, Not(IsNil))
 
-	err = s.client.LPush(pop, val)
+	count, err := s.client.LPush(pop, val)
 	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(1))
 
-	err = s.client.LPush(pop, val2)
+	count, err = s.client.LPush(pop, val2)
 	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(2))
 
-	err = s.client.LPush(pop, val3)
+	count, err = s.client.LPush(pop, val3)
 	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(3))
 
 	v, err = s.client.LPop(pop)
 	c.Assert(err, IsNil)
@@ -153,14 +157,17 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	err = s.client.Set(key2, "2")
 	c.Assert(err, IsNil)
 
-	err = s.client.Incr(key2)
+	value, err := s.client.Incr(key2)
 	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(3))
 
-	err = s.client.Incr(key2)
+	value, err = s.client.Incr(key2)
 	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(4))
 
-	err = s.client.Incr(key2)
+	value, err = s.client.Incr(key2)
 	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(5))
 
 	v, err = s.client.Get(key2)
 	c.Assert(err, IsNil)
