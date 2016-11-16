@@ -16,7 +16,7 @@ type Client interface {
 	LPop(key string) (string, error)
 
 	Incr(key string) error
-	IncrBy(key string, inc interface{}) (interface{}, error)
+	IncrBy(key string, inc int64) (int64, error)
 
 	ZAdd(key string, score float64, value interface{}) (int64, error)
 	ZCount(key string, min interface{}, max interface{}) (int64, error)

@@ -130,25 +130,29 @@ func (dc *InMemoryClient) Incr(key string) (err error) {
 	return nil
 }
 
-func (dc *InMemoryClient) IncrBy(key string, inc interface{}) (val interface{}, err error) {
+func (dc *InMemoryClient) IncrBy(key string, inc int64) (val int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
 	value, ok := dc.Keys[key]
 	expire, hasExpire := dc.Expires[key]
 
-	var incrValue = NumberToInt64(inc)
-
-	if !ok || (hasExpire && time.Now().After(expire)) {
-		dc.Keys[key] = incrValue
-		return incrValue, nil
+	if hasExpire && time.Now().After(expire) {
+		ok = false
+		delete(dc.Expires, key)
 	}
 
-	var currentValue = NumberToInt64(value)
+	var numericValue int64 = 0
+	if ok {
+		numericValue, ok = NumberToInt64(value)
+		if !ok {
+			return 0, errors.New("Stored value can not be converted to int64")
+		}
+	}
 
-	incrValue += currentValue
-	dc.Keys[key] = incrValue
-	return incrValue, nil
+	numericValue += inc
+	dc.Keys[key] = numericValue
+	return numericValue, nil
 }
 
 func (dc *InMemoryClient) Expire(key string, expire int64) (bool, error) {

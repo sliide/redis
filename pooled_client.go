@@ -99,11 +99,11 @@ func (pc *PooledClient) Incr(key string) error {
 	return err
 }
 
-func (pc *PooledClient) IncrBy(key string, inc interface{}) (interface{}, error) {
+func (pc *PooledClient) IncrBy(key string, inc int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return c.Do("INCRBY", key, inc)
+	return redis.Int64(c.Do("INCRBY", key, inc))
 }
 
 func (pc *PooledClient) Expire(key string, seconds int64) (bool, error) {

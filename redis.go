@@ -1,5 +1,9 @@
 package redis
 
+import (
+	"errors"
+)
+
 var client Client = nil
 
 func SetClient(redisClient Client) {
@@ -66,7 +70,11 @@ func Incr(key string) error {
 }
 
 func IncrBy(key string, inc interface{}) (interface{}, error) {
-	return client.IncrBy(key, inc)
+	increment, ok := NumberToInt64(inc)
+	if !ok {
+		return nil, errors.New("Increment must be convertible to int64")
+	}
+	return client.IncrBy(key, increment)
 }
 
 func ZAdd(key string, score float64, value interface{}) (int64, error) {
