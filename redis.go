@@ -20,7 +20,7 @@ func Get(key string) (string, error) {
 }
 
 func MGet(keys []string) ([]string, error) {
-	return client.MGet(keys)
+	return client.MGet(keys...)
 }
 
 func Set(key string, value interface{}) error {
@@ -36,7 +36,8 @@ func Expire(key string, seconds int64) error {
 }
 
 func Del(key string) error {
-	return client.Del(key)
+	_, err := client.Del(key)
+	return err
 }
 
 func LPush(key string, value string) error {

@@ -66,3 +66,11 @@ func NumberToInt64(value interface{}) int64 {
 
 	return returnValue
 }
+
+func interfaceSlice(strings []string) []interface{} {
+	interfaces := make([]interface{}, 0, len(strings))
+	for _, s := range strings {
+		interfaces = append(interfaces, s)
+	}
+	return interfaces
+}

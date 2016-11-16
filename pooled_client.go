@@ -114,24 +114,18 @@ func (pc *PooledClient) Expire(key string, seconds int64) error {
 	return err
 }
 
-func (pc *PooledClient) Del(key string) error {
+func (pc *PooledClient) Del(keys ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	_, err := redis.Bool(c.Do("DEL", key))
-	return err
+	return redis.Int64(c.Do("DEL", interfaceSlice(keys)...))
 }
 
-func (pc *PooledClient) MGet(keys []string) ([]string, error) {
+func (pc *PooledClient) MGet(keys ...string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	var args []interface{}
-	for _, key := range keys {
-		args = append(args, key)
-	}
-
-	return redis.Strings(c.Do("MGET", args...))
+	return redis.Strings(c.Do("MGET", interfaceSlice(keys)...))
 }
 
 func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int64, error) {

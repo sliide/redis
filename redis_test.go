@@ -172,7 +172,7 @@ func (s *RedisTestSuite) TestMGet(c *C) {
 		keys = append(keys, key)
 	}
 
-	values, err := s.client.MGet(keys)
+	values, err := s.client.MGet(keys...)
 	c.Assert(err, IsNil)
 
 	expectedValues := []string{}
@@ -188,7 +188,7 @@ func (s *RedisTestSuite) TestMGet(c *C) {
 	}
 }
 
-func (s *RedisTestSuite) TestMGetWIthFailedKeys(c *C) {
+func (s *RedisTestSuite) TestMGetWithFailedKeys(c *C) {
 	keyValMap := map[string]string{
 		RandSeq(10): RandSeq(10),
 		RandSeq(10): RandSeq(10),
@@ -203,7 +203,7 @@ func (s *RedisTestSuite) TestMGetWIthFailedKeys(c *C) {
 
 	keys = append(keys, "THISDOESNOTEXIST")
 
-	values, err := s.client.MGet(keys)
+	values, err := s.client.MGet(keys...)
 
 	c.Assert(err, IsNil)
 

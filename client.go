@@ -4,11 +4,11 @@ type Client interface {
 	Close()
 
 	Get(key string) (string, error)
-	MGet(keys []string) ([]string, error)
+	MGet(keys ...string) ([]string, error)
 	Set(key string, value interface{}) error
 	SetEx(key string, expire int64, value interface{}) error
 	Expire(key string, seconds int64) error
-	Del(key string) error
+	Del(keys ...string) (int64, error)
 
 	LPush(key string, value string) error
 	RPush(key string, value string) error

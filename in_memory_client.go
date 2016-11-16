@@ -159,15 +159,21 @@ func (dc *InMemoryClient) Expire(key string, expire int64) (err error) {
 	return nil
 }
 
-func (dc *InMemoryClient) Del(key string) (err error) {
+func (dc *InMemoryClient) Del(keys ...string) (count int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
-	delete(dc.Keys, key)
-	return nil
+	count = 0
+	for _, key := range keys {
+		if _, exists := dc.Keys[key]; exists {
+			delete(dc.Keys, key)
+			count++
+		}
+	}
+	return count, nil
 }
 
-func (dc *InMemoryClient) MGet(keys []string) ([]string, error) {
+func (dc *InMemoryClient) MGet(keys ...string) ([]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
