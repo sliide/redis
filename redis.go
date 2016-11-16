@@ -56,7 +56,7 @@ func LPop(key string) (string, error) {
 }
 
 func Pop(key string) (string, error) {
-	return client.Pop(key)
+	return client.LPop(key)
 }
 
 func Incr(key string) error {

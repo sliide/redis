@@ -29,10 +29,6 @@ func (dc DummyClient) LRange(key string) (vals []string, err error) {
 	return []string{}, nil
 }
 
-func (dc DummyClient) Pop(key string) (val string, err error) {
-	return dc.LPop(key)
-}
-
 func (dc DummyClient) LPop(key string) (val string, err error) {
 	return "", nil
 }

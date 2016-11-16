@@ -14,7 +14,6 @@ type Client interface {
 	RPush(key string, value string) error
 	LRange(key string) ([]string, error)
 	LPop(key string) (string, error)
-	Pop(key string) (string, error) // legacy LPop
 
 	Incr(key string) error
 	IncrBy(key string, inc interface{}) (interface{}, error)

@@ -116,7 +116,7 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val)
 
-	v, err = s.client.Pop(pop)
+	v, err = s.client.LPop(pop)
 	c.Assert(err, Not(IsNil))
 
 	err = s.client.LPush(pop, val)
@@ -128,15 +128,15 @@ func (s *RedisTestSuite) TestRedis(c *C) {
 	err = s.client.LPush(pop, val3)
 	c.Assert(err, IsNil)
 
-	v, err = s.client.Pop(pop)
+	v, err = s.client.LPop(pop)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val3)
 
-	v, err = s.client.Pop(pop)
+	v, err = s.client.LPop(pop)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val2)
 
-	v, err = s.client.Pop(pop)
+	v, err = s.client.LPop(pop)
 	c.Assert(err, IsNil)
 	c.Assert(v, Equals, val)
 

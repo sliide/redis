@@ -102,10 +102,6 @@ func (dc *InMemoryClient) LRange(key string) (vals []string, err error) {
 	return []string{}, nil
 }
 
-func (dc *InMemoryClient) Pop(key string) (val string, err error) {
-	return dc.LPop(key)
-}
-
 func (dc *InMemoryClient) LPop(key string) (val string, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()

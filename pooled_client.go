@@ -84,10 +84,6 @@ func (pc *PooledClient) LRange(key string) ([]string, error) {
 	return redis.Strings(c.Do("LRANGE", key, 0, -1))
 }
 
-func (pc *PooledClient) Pop(key string) (string, error) {
-	return pc.LPop(key)
-}
-
 func (pc *PooledClient) LPop(key string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
