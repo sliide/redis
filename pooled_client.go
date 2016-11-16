@@ -53,7 +53,7 @@ func (pc *PooledClient) Set(key string, value interface{}) error {
 	return err
 }
 
-func (pc *PooledClient) SetEx(key string, expire int, value interface{}) error {
+func (pc *PooledClient) SetEx(key string, expire int64, value interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -106,7 +106,7 @@ func (pc *PooledClient) IncrBy(key string, inc interface{}) (interface{}, error)
 	return c.Do("INCRBY", key, inc)
 }
 
-func (pc *PooledClient) Expire(key string, seconds int) error {
+func (pc *PooledClient) Expire(key string, seconds int64) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -134,16 +134,16 @@ func (pc *PooledClient) MGet(keys []string) ([]string, error) {
 	return redis.Strings(c.Do("MGET", args...))
 }
 
-func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int, error) {
+func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int(c.Do("ZADD", key, score, value))
+	return redis.Int64(c.Do("ZADD", key, score, value))
 }
 
-func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (int, error) {
+func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int(c.Do("ZCOUNT", key, min, max))
+	return redis.Int64(c.Do("ZCOUNT", key, min, max))
 }

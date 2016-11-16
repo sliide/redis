@@ -13,7 +13,7 @@ func (dc DummyClient) Set(key string, value interface{}) (err error) {
 	return nil
 }
 
-func (dc DummyClient) SetEx(key string, expire int, value interface{}) (err error) {
+func (dc DummyClient) SetEx(key string, expire int64, value interface{}) (err error) {
 	return nil
 }
 
@@ -41,7 +41,7 @@ func (dc DummyClient) IncrBy(key string, inc interface{}) (val interface{}, err 
 	return nil, nil
 }
 
-func (dc DummyClient) Expire(key string, seconds int) (err error) {
+func (dc DummyClient) Expire(key string, seconds int64) (err error) {
 	return nil
 }
 
@@ -53,10 +53,10 @@ func (dc DummyClient) MGet(keys []string) ([]string, error) {
 	return []string{}, nil
 }
 
-func (dc DummyClient) ZAdd(key string, score float64, value interface{})  (int, error) {
+func (dc DummyClient) ZAdd(key string, score float64, value interface{})  (int64, error) {
 	return 0, nil
 }
 
-func (dc DummyClient) ZCount(key string, min interface{}, max interface{}) (int, error) {
+func (dc DummyClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	return 0, nil
 }

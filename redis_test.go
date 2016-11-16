@@ -217,15 +217,15 @@ func (s *RedisTestSuite) TestZAdd(c *C) {
 	key := RandSeq(32)
 	count, err := s.client.ZAdd(key, 0.0, "a")
 	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 1)
+	c.Assert(count, Equals, int64(1))
 
 	count, err = s.client.ZCount(key, "-inf", "+inf")
 	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 1)
+	c.Assert(count, Equals, int64(1))
 
 	count, err = s.client.ZAdd(key, 0.0, "a")
 	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 0)
+	c.Assert(count, Equals, int64(0))
 }
 
 func (s *RedisTestSuite) TestZCount(c *C) {
@@ -237,19 +237,19 @@ func (s *RedisTestSuite) TestZCount(c *C) {
 
 	count, err := s.client.ZCount(key, 0, "+inf")
 	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 1)
+	c.Assert(count, Equals, int64(1))
 
 	count, err = s.client.ZCount(key, "-inf", 0)
 	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 1)
+	c.Assert(count, Equals, int64(1))
 
 	count, err = s.client.ZCount(key, -10, 10)
 	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 2)
+	c.Assert(count, Equals, int64(2))
 }
 
 func (s *RedisTestSuite) TestZCountNotExistentKey(c *C) {
 	count, err := s.client.ZCount("NotExisting", "-inf", "+inf")
 	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 0)
+	c.Assert(count, Equals, int64(0))
 }

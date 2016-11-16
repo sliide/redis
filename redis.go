@@ -27,11 +27,11 @@ func Set(key string, value interface{}) error {
 	return client.Set(key, value)
 }
 
-func SetEx(key string, expire int, value interface{}) error {
+func SetEx(key string, expire int64, value interface{}) error {
 	return client.SetEx(key, expire, value)
 }
 
-func Expire(key string, seconds int) error {
+func Expire(key string, seconds int64) error {
 	return client.Expire(key, seconds)
 }
 
@@ -67,10 +67,10 @@ func IncrBy(key string, inc interface{}) (interface{}, error) {
 	return client.IncrBy(key, inc)
 }
 
-func ZAdd(key string, score float64, value interface{}) (int, error) {
+func ZAdd(key string, score float64, value interface{}) (int64, error) {
 	return client.ZAdd(key, score, value)
 }
 
-func ZCount(key string, min interface{}, max interface{}) (int, error) {
+func ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	return client.ZCount(key, min, max)
 }

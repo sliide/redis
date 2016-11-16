@@ -54,7 +54,7 @@ func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
 	return nil
 }
 
-func (dc *InMemoryClient) SetEx(key string, expire int, value interface{}) (err error) {
+func (dc *InMemoryClient) SetEx(key string, expire int64, value interface{}) (err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -151,7 +151,7 @@ func (dc *InMemoryClient) IncrBy(key string, inc interface{}) (val interface{}, 
 	return incrValue, nil
 }
 
-func (dc *InMemoryClient) Expire(key string, expire int) (err error) {
+func (dc *InMemoryClient) Expire(key string, expire int64) (err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -187,7 +187,7 @@ func (dc *InMemoryClient) MGet(keys []string) ([]string, error) {
 	return values, nil
 }
 
-func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (int, error) {
+func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -228,7 +228,7 @@ func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (in
 	return 1, nil
 }
 
-func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (int, error) {
+func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -261,10 +261,10 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 	}
 
 	if negativeInfinite && positiveInfinite {
-		return len(currentSet), nil
+		return int64(len(currentSet)), nil
 	}
 
-	count := 0
+	count := int64(0)
 	for i := 0; i < len(currentSet); i++ {
 		currentScore := currentSet[i][0].(float64)
 
