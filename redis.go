@@ -87,3 +87,7 @@ func ZAdd(key string, score float64, value interface{}) (int64, error) {
 func ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	return client.ZCount(key, min, max)
 }
+
+func SetNxEx(key string, value interface{}, expire int64) (int64, error) {
+	return client.SetNxEx(key, value, expire)
+}
