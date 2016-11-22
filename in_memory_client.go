@@ -291,3 +291,20 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 
 	return count, nil
 }
+
+func (dc *InMemoryClient) SetNX(key string, value interface{}, timeout int) (int, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	_, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
+
+	if (ok && (hasExpire && !time.Now().After(expire))) || ok && !hasExpire {
+		return 0, nil
+	}
+
+	dc.Expires[key] = time.Now().Add(time.Duration(timeout) * time.Millisecond)
+	dc.Keys[key] = value
+
+	return 1, nil
+}

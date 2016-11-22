@@ -7,6 +7,7 @@ type Client interface {
 	MGet(keys ...string) ([]string, error)
 	Set(key string, value interface{}) error
 	SetEx(key string, expire int64, value interface{}) error
+	SetNX(key string, value interface{}, expire int) (int, error)
 	Expire(key string, seconds int64) (bool, error)
 	Del(keys ...string) (int64, error)
 
