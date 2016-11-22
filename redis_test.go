@@ -314,24 +314,24 @@ func (s *RedisTestSuite) TestSetResetsExpire(c *C) {
 	c.Assert(v, Equals, "1")
 }
 
-func (s *RedisTestSuite) TestSetNX(c *C) {
+func (s *RedisTestSuite) TestSetNXEX(c *C) {
 	existingKey := RandSeq(32)
 	s.client.Set(existingKey, 1)
 
-	val, err := s.client.SetNX(existingKey, 1, 1000)
+	val, err := s.client.SetNxEx(existingKey, 1, 1)
 	c.Assert(err, IsNil)
-	c.Assert(val, Equals, 0)
+	c.Assert(val, Equals, int64(0))
 
 	nonExistingKey := RandSeq(32)
 
-	val, err = s.client.SetNX(nonExistingKey, 1, 1000)
+	val, err = s.client.SetNxEx(nonExistingKey, 1, 1)
 	c.Assert(err, IsNil)
-	c.Assert(val, Equals, 1)
+	c.Assert(val, Equals, int64(1))
 
 	time.Sleep(2 * time.Second)
 
 	// Should have expire at this point
-	val, err = s.client.SetNX(nonExistingKey, 1, 1000)
+	val, err = s.client.SetNxEx(nonExistingKey, 1, 1)
 	c.Assert(err, IsNil)
-	c.Assert(val, Equals, 1)
+	c.Assert(val, Equals, int64(1))
 }

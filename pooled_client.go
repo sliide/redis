@@ -143,19 +143,19 @@ func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (in
 	return redis.Int64(c.Do("ZCOUNT", key, min, max))
 }
 
-func (pc *PooledClient) SetNX(key string, value interface{}, expire int) (int, error) {
+func (pc *PooledClient) SetNxEx(key string, value interface{}, expire int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	// The normal redis SETNX command does not accept timeouts, For this reason
 	// our implementation simply uses the normal SET command with NX(Not exists) and
-	// PX(expire) options and mimics what would be returned by SETNX.
-	val, err := c.Do("SET", key, value, "NX", "PX", expire)
+	// EX(expire) options and mimics what would be returned by SETNX.
+	val, err := c.Do("SET", key, value, "NX", "EX", expire)
 
 	switch val {
 	case "OK":
-		return redis.Int(int64(1), err)
+		return redis.Int64(int64(1), err)
 	default:
-		return redis.Int(int64(0), err)
+		return redis.Int64(int64(0), err)
 	}
 }
