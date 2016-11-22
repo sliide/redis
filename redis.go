@@ -1,5 +1,9 @@
 package redis
 
+import (
+	"errors"
+)
+
 var client Client = nil
 
 func SetClient(redisClient Client) {
@@ -20,31 +24,35 @@ func Get(key string) (string, error) {
 }
 
 func MGet(keys []string) ([]string, error) {
-	return client.MGet(keys)
+	return client.MGet(keys...)
 }
 
 func Set(key string, value interface{}) error {
 	return client.Set(key, value)
 }
 
-func SetEx(key string, expire int, value interface{}) error {
+func SetEx(key string, expire int64, value interface{}) error {
 	return client.SetEx(key, expire, value)
 }
 
-func Expire(key string, seconds int) error {
-	return client.Expire(key, seconds)
+func Expire(key string, seconds int64) error {
+	_, err := client.Expire(key, seconds)
+	return err
 }
 
 func Del(key string) error {
-	return client.Del(key)
+	_, err := client.Del(key)
+	return err
 }
 
 func LPush(key string, value string) error {
-	return client.LPush(key, value)
+	_, err := client.LPush(key, value)
+	return err
 }
 
 func RPush(key string, value string) error {
-	return client.RPush(key, value)
+	_, err := client.RPush(key, value)
+	return err
 }
 
 func LRange(key string) ([]string, error) {
@@ -56,21 +64,26 @@ func LPop(key string) (string, error) {
 }
 
 func Pop(key string) (string, error) {
-	return client.Pop(key)
+	return client.LPop(key)
 }
 
 func Incr(key string) error {
-	return client.Incr(key)
+	_, err := client.Incr(key)
+	return err
 }
 
 func IncrBy(key string, inc interface{}) (interface{}, error) {
-	return client.IncrBy(key, inc)
+	increment, ok := NumberToInt64(inc)
+	if !ok {
+		return nil, errors.New("Increment must be convertible to int64")
+	}
+	return client.IncrBy(key, increment)
 }
 
-func ZAdd(key string, score float64, value interface{}) (int, error) {
+func ZAdd(key string, score float64, value interface{}) (int64, error) {
 	return client.ZAdd(key, score, value)
 }
 
-func ZCount(key string, min interface{}, max interface{}) (int, error) {
+func ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	return client.ZCount(key, min, max)
 }

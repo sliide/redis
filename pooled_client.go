@@ -49,32 +49,34 @@ func (pc *PooledClient) Set(key string, value interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
+	// _ = "OK", nil is possible only if NX or XX is used
+	// Those should be a separate interface. It should return a boolean
+	// if the operation took place or not.
 	_, err := c.Do("SET", key, value)
 	return err
 }
 
-func (pc *PooledClient) SetEx(key string, expire int, value interface{}) error {
+func (pc *PooledClient) SetEx(key string, expire int64, value interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
+	// _ = "OK"
 	_, err := c.Do("SETEX", key, expire, value)
 	return err
 }
 
-func (pc *PooledClient) LPush(key string, value string) error {
+func (pc *PooledClient) LPush(key string, value string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("LPUSH", key, value)
-	return err
+	return redis.Int64(c.Do("LPUSH", key, value))
 }
 
-func (pc *PooledClient) RPush(key string, value string) error {
+func (pc *PooledClient) RPush(key string, value string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("RPUSH", key, value)
-	return err
+	return redis.Int64(c.Do("RPUSH", key, value))
 }
 
 func (pc *PooledClient) LRange(key string) ([]string, error) {
@@ -84,10 +86,6 @@ func (pc *PooledClient) LRange(key string) ([]string, error) {
 	return redis.Strings(c.Do("LRANGE", key, 0, -1))
 }
 
-func (pc *PooledClient) Pop(key string) (string, error) {
-	return pc.LPop(key)
-}
-
 func (pc *PooledClient) LPop(key string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
@@ -95,59 +93,52 @@ func (pc *PooledClient) LPop(key string) (string, error) {
 	return redis.String(c.Do("LPOP", key))
 }
 
-func (pc *PooledClient) Incr(key string) error {
+func (pc *PooledClient) Incr(key string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("INCR", key)
-	return err
+	return redis.Int64(c.Do("INCR", key))
 }
 
-func (pc *PooledClient) IncrBy(key string, inc interface{}) (interface{}, error) {
+func (pc *PooledClient) IncrBy(key string, inc int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return c.Do("INCRBY", key, inc)
+	return redis.Int64(c.Do("INCRBY", key, inc))
 }
 
-func (pc *PooledClient) Expire(key string, seconds int) error {
+func (pc *PooledClient) Expire(key string, seconds int64) (bool, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("EXPIRE", key, seconds)
-	return err
+	result, err := redis.Int(c.Do("EXPIRE", key, seconds))
+	return result == 1, err
 }
 
-func (pc *PooledClient) Del(key string) error {
+func (pc *PooledClient) Del(keys ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	_, err := redis.Bool(c.Do("DEL", key))
-	return err
+	return redis.Int64(c.Do("DEL", interfaceSlice(keys)...))
 }
 
-func (pc *PooledClient) MGet(keys []string) ([]string, error) {
+func (pc *PooledClient) MGet(keys ...string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	var args []interface{}
-	for _, key := range keys {
-		args = append(args, key)
-	}
-
-	return redis.Strings(c.Do("MGET", args...))
+	return redis.Strings(c.Do("MGET", interfaceSlice(keys)...))
 }
 
-func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int, error) {
+func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int(c.Do("ZADD", key, score, value))
+	return redis.Int64(c.Do("ZADD", key, score, value))
 }
 
-func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (int, error) {
+func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int(c.Do("ZCOUNT", key, min, max))
+	return redis.Int64(c.Do("ZCOUNT", key, min, max))
 }

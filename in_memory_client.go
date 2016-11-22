@@ -54,7 +54,7 @@ func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
 	return nil
 }
 
-func (dc *InMemoryClient) SetEx(key string, expire int, value interface{}) (err error) {
+func (dc *InMemoryClient) SetEx(key string, expire int64, value interface{}) (err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -63,33 +63,40 @@ func (dc *InMemoryClient) SetEx(key string, expire int, value interface{}) (err 
 	return nil
 }
 
-func (dc *InMemoryClient) LPush(key string, value string) (err error) {
+func (dc *InMemoryClient) LPush(key string, value string) (length int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
 	values, ok := dc.Keys[key]
 	if !ok {
 		dc.Keys[key] = []string{value}
-		return nil
+		return 1, nil
 	}
 
-	array := values.([]string)
+	array, ok := values.([]string)
+	if !ok {
+		return 0, errors.New("Can not push into a non list")
+	}
+
 	dc.Keys[key] = append([]string{value}, array...)
-	return nil
+	return int64(len(array) + 1), nil
 }
 
-func (dc *InMemoryClient) RPush(key string, value string) (err error) {
+func (dc *InMemoryClient) RPush(key string, value string) (length int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
 	if _, ok := dc.Keys[key]; !ok {
 		dc.Keys[key] = []string{value}
-		return
+		return 1, nil
 	}
-	array := dc.Keys[key].([]string)
+	array, ok := dc.Keys[key].([]string)
+	if !ok {
+		return 0, errors.New("Can not push into a non list")
+	}
 
 	dc.Keys[key] = append(array, value)
-	return nil
+	return int64(len(array) + 1), nil
 }
 
 func (dc *InMemoryClient) LRange(key string) (vals []string, err error) {
@@ -100,10 +107,6 @@ func (dc *InMemoryClient) LRange(key string) (vals []string, err error) {
 		return value.([]string), nil
 	}
 	return []string{}, nil
-}
-
-func (dc *InMemoryClient) Pop(key string) (val string, err error) {
-	return dc.LPop(key)
 }
 
 func (dc *InMemoryClient) LPop(key string) (val string, err error) {
@@ -129,49 +132,62 @@ func (dc *InMemoryClient) LPop(key string) (val string, err error) {
 	return returnValue, nil
 }
 
-func (dc *InMemoryClient) Incr(key string) (err error) {
-	dc.IncrBy(key, 1)
-	return nil
+func (dc *InMemoryClient) Incr(key string) (val int64, err error) {
+	return dc.IncrBy(key, 1)
 }
 
-func (dc *InMemoryClient) IncrBy(key string, inc interface{}) (val interface{}, err error) {
+func (dc *InMemoryClient) IncrBy(key string, inc int64) (val int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
 	value, ok := dc.Keys[key]
 	expire, hasExpire := dc.Expires[key]
 
-	var incrValue = NumberToInt64(inc)
-
-	if !ok || (hasExpire && time.Now().After(expire)) {
-		dc.Keys[key] = incrValue
-		return incrValue, nil
+	if hasExpire && time.Now().After(expire) {
+		ok = false
+		delete(dc.Expires, key)
 	}
 
-	var currentValue = NumberToInt64(value)
+	var numericValue int64 = 0
+	if ok {
+		numericValue, ok = NumberToInt64(value)
+		if !ok {
+			return 0, errors.New("Stored value can not be converted to int64")
+		}
+	}
 
-	incrValue += currentValue
-	dc.Keys[key] = incrValue
-	return incrValue, nil
+	numericValue += inc
+	dc.Keys[key] = numericValue
+	return numericValue, nil
 }
 
-func (dc *InMemoryClient) Expire(key string, expire int) (err error) {
+func (dc *InMemoryClient) Expire(key string, expire int64) (bool, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
+
+	if _, exists := dc.Keys[key]; !exists {
+		return false, nil
+	}
 
 	dc.Expires[key] = time.Now().Add(time.Duration(expire) * time.Second)
-	return nil
+	return true, nil
 }
 
-func (dc *InMemoryClient) Del(key string) (err error) {
+func (dc *InMemoryClient) Del(keys ...string) (count int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
-	delete(dc.Keys, key)
-	return nil
+	count = 0
+	for _, key := range keys {
+		if _, exists := dc.Keys[key]; exists {
+			delete(dc.Keys, key)
+			count++
+		}
+	}
+	return count, nil
 }
 
-func (dc *InMemoryClient) MGet(keys []string) ([]string, error) {
+func (dc *InMemoryClient) MGet(keys ...string) ([]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -191,7 +207,7 @@ func (dc *InMemoryClient) MGet(keys []string) ([]string, error) {
 	return values, nil
 }
 
-func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (int, error) {
+func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -232,7 +248,7 @@ func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (in
 	return 1, nil
 }
 
-func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (int, error) {
+func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -265,10 +281,10 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 	}
 
 	if negativeInfinite && positiveInfinite {
-		return len(currentSet), nil
+		return int64(len(currentSet)), nil
 	}
 
-	count := 0
+	count := int64(0)
 	for i := 0; i < len(currentSet); i++ {
 		currentScore := currentSet[i][0].(float64)
 
