@@ -2,7 +2,6 @@ package redis
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -34,16 +33,7 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 		return "", errors.New("redigo: nil returned")
 	}
 
-	switch value.(type) {
-	case string:
-		return value.(string), nil
-	case int:
-		return fmt.Sprintf("%d", value.(int)), nil
-	case int64:
-		return fmt.Sprintf("%d", value.(int64)), nil
-	}
-
-	return value.(string), nil
+	return ValueToString(value), nil
 }
 
 func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
@@ -51,6 +41,7 @@ func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
 	defer dc.mu.Unlock()
 
 	dc.Keys[key] = value
+	delete(dc.Expires, key)
 	return nil
 }
 
@@ -79,6 +70,7 @@ func (dc *InMemoryClient) LPush(key string, value string) (length int64, err err
 	}
 
 	dc.Keys[key] = append([]string{value}, array...)
+	delete(dc.Expires, key)
 	return int64(len(array) + 1), nil
 }
 
@@ -96,6 +88,7 @@ func (dc *InMemoryClient) RPush(key string, value string) (length int64, err err
 	}
 
 	dc.Keys[key] = append(array, value)
+	delete(dc.Expires, key)
 	return int64(len(array) + 1), nil
 }
 
@@ -294,8 +287,24 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 
 			count += 1
 		}
-
 	}
 
 	return count, nil
+}
+
+func (dc *InMemoryClient) SetNxEx(key string, value interface{}, timeout int64) (int64, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	_, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
+
+	if (ok && (hasExpire && !time.Now().After(expire))) || ok && !hasExpire {
+		return 0, nil
+	}
+
+	dc.Expires[key] = time.Now().Add(time.Duration(timeout) * time.Second)
+	dc.Keys[key] = value
+
+	return 1, nil
 }
