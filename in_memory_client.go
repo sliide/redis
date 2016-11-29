@@ -308,3 +308,7 @@ func (dc *InMemoryClient) SetNxEx(key string, value interface{}, timeout int64) 
 
 	return 1, nil
 }
+
+func (dc *InMemoryClient) Eval(script string, keyCount int) (interface{}, error) {
+	return nil, nil
+}

@@ -159,3 +159,12 @@ func (pc *PooledClient) SetNxEx(key string, value interface{}, expire int64) (in
 		return redis.Int64(int64(0), err)
 	}
 }
+
+func (pc *PooledClient) Eval(script string, keyCount int) (interface{}, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	redisScript := redis.NewScript(keyCount, script)
+
+	return redisScript.Do(c)
+}
