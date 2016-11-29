@@ -91,3 +91,7 @@ func ZCount(key string, min interface{}, max interface{}) (int64, error) {
 func SetNxEx(key string, value interface{}, expire int64) (int64, error) {
 	return client.SetNxEx(key, value, expire)
 }
+
+func Eval(script string, keyCount int) (interface{}, error) {
+	return client.Eval(script, keyCount)
+}
