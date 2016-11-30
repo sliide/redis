@@ -22,4 +22,6 @@ type Client interface {
 	ZAdd(key string, score float64, value interface{}) (int64, error)
 	ZCount(key string, min interface{}, max interface{}) (int64, error)
 	Eval(string, int) (interface{}, error)
+
+	IncrByFloat(string, float64) (float64, error)
 }

@@ -95,3 +95,7 @@ func SetNxEx(key string, value interface{}, expire int64) (int64, error) {
 func Eval(script string, keyCount int) (interface{}, error) {
 	return client.Eval(script, keyCount)
 }
+
+func IncrByFloat(key string, inc float64) (float64, error) {
+	return client.IncrBy(key, inc)
+}
