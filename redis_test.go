@@ -129,7 +129,7 @@ func (s *RedisTestSuite) TestRPush(c *C) {
 
 	for i := 0; i < 2; i++ {
 		count, err := s.client.RPush(key, strconv.Itoa(i))
-		c.Assert(count, Equals, int64(i + 1))
+		c.Assert(count, Equals, int64(i+1))
 		c.Assert(err, IsNil)
 	}
 
@@ -334,4 +334,12 @@ func (s *RedisTestSuite) TestSetNXEX(c *C) {
 	val, err = s.client.SetNxEx(nonExistingKey, 1, 1)
 	c.Assert(err, IsNil)
 	c.Assert(val, Equals, int64(1))
+}
+
+func (s *RedisTestSuite) TestIncrByFloat(c *C) {
+	key := RandSeq(32)
+
+	incrVal, err := s.client.IncrByFloat(key, 10.1)
+	c.Assert(err, IsNil)
+	c.Assert(incrVal, Equals, float64(10.1))
 }

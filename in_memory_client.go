@@ -312,3 +312,25 @@ func (dc *InMemoryClient) SetNxEx(key string, value interface{}, timeout int64) 
 func (dc *InMemoryClient) Eval(script string, keyCount int) (interface{}, error) {
 	return nil, nil
 }
+
+func (dc *InMemoryClient) IncrByFloat(key string, inc float64) (val float64, err error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	value, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
+
+	if hasExpire && time.Now().After(expire) {
+		ok = false
+		delete(dc.Expires, key)
+	}
+
+	var numericValue float64 = 0
+	if ok {
+		numericValue = NumberToFloat64(value)
+	}
+
+	numericValue += inc
+	dc.Keys[key] = numericValue
+	return numericValue, nil
+}

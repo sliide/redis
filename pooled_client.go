@@ -168,3 +168,10 @@ func (pc *PooledClient) Eval(script string, keyCount int) (interface{}, error) {
 
 	return redisScript.Do(c)
 }
+
+func (pc *PooledClient) IncrByFloat(key string, inc float64) (float64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Float64(c.Do("INCRBYFLOAT", key, inc))
+}
