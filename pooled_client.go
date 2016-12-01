@@ -168,3 +168,126 @@ func (pc *PooledClient) Eval(script string, keyCount int) (interface{}, error) {
 
 	return redisScript.Do(c)
 }
+
+func (pc *PooledClient) HDel(key string, fields ...string) (int64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Int64(c.Do("HDEL", interfaceSlice(append([]string{key}, fields...))...))
+}
+
+func (pc *PooledClient) HExists(key string, field string) (bool, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Bool(c.Do("HEXISTS", key, field))
+}
+
+func (pc *PooledClient) HGet(key string, field string) (string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.String(c.Do("HGET", key, field))
+}
+
+func (pc *PooledClient) HGetAll(key string) (map[string]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	keysValues, err := redis.Strings(c.Do("HGETALL", key))
+	if err != nil {
+		return nil, err
+	}
+	return stringMap(keysValues), nil
+}
+
+func (pc *PooledClient) HLen(key string) (int64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Int64(c.Do("HLEN", key))
+}
+
+func (pc *PooledClient) HMGet(key string, fields ...string) (map[string]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	values, err := redis.Strings(c.Do("HMGET", interfaceSlice(append([]string{key}, fields...))...))
+	if err != nil {
+		return nil, err
+	}
+
+	return zipMap(fields, values), nil
+}
+
+func (pc *PooledClient) HKeys(key string) ([]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Strings(c.Do("HKEYS", key))
+}
+
+func (pc *PooledClient) HMSet(key string, fields map[string]interface{}) error {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	args := append(make([]interface{}, 0, len(fields)*2+1), key)
+	for key, value := range fields {
+		args = append(args, key, value)
+	}
+
+	_, err := redis.String(c.Do("HMSET", args...))
+	return err
+}
+
+func (pc *PooledClient) HSet(key string, field string, value interface{}) (bool, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Bool(c.Do("HSET", key, field, value))
+}
+
+func (pc *PooledClient) HVals(key string) ([]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Strings(c.Do("HVALS", key))
+}
+
+func (pc *PooledClient) HIncrBy(key string, field string, inc int64) (int64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Int64(c.Do("HINCRBY", key, field, inc))
+}
+
+func (pc *PooledClient) HIncrByFloat(key string, field string, inc float64) (float64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Float64(c.Do("HINCRBYFLOAT", key, field, inc))
+}
+
+func stringMap(keysValues []string) map[string]string {
+	if len(keysValues)%2 == 1 {
+		return nil
+	}
+
+	hash := make(map[string]string, len(keysValues)/2)
+	for i := 0; i < len(keysValues); i += 2 {
+		hash[keysValues[i]] = keysValues[i+1]
+	}
+	return hash
+}
+
+func zipMap(keys, values []string) map[string]string {
+	if len(keys) != len(values) {
+		return nil
+	}
+
+	hash := make(map[string]string, len(keys))
+	for i := 0; i < len(keys); i++ {
+		hash[keys[i]] = values[i]
+	}
+	return hash
+}
