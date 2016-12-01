@@ -3,11 +3,12 @@ package redis
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 	"testing"
-
 	"time"
 
+	"github.com/garyburd/redigo/redis"
 	. "gopkg.in/check.v1"
 )
 
@@ -127,7 +128,7 @@ func (s *RedisTestSuite) TestRPush(c *C) {
 
 	for i := 0; i < 2; i++ {
 		count, err := s.client.RPush(key, strconv.Itoa(i))
-		c.Assert(count, Equals, int64(i + 1))
+		c.Assert(count, Equals, int64(i+1))
 		c.Assert(err, IsNil)
 	}
 
@@ -332,4 +333,269 @@ func (s *RedisTestSuite) TestSetNXEX(c *C) {
 	val, err = s.client.SetNxEx(nonExistingKey, 1, 1)
 	c.Assert(err, IsNil)
 	c.Assert(val, Equals, int64(1))
+}
+
+func (s *RedisTestSuite) TestHSet(c *C) {
+	key := RandSeq(32)
+	field := "test"
+	value := "unit"
+
+	// returns true when field or key does not exist
+	doesNotExist, err := s.client.HSet(key, field, value)
+	c.Assert(err, IsNil)
+	c.Assert(doesNotExist, Equals, true)
+
+	// stores value
+	storedValue, err := s.client.HGet(key, field)
+	c.Assert(err, IsNil)
+	c.Assert(storedValue, Equals, value)
+
+	// returns false when field does exist
+	doesNotExist, err = s.client.HSet(key, field, value)
+	c.Assert(err, IsNil)
+	c.Assert(doesNotExist, Equals, false)
+
+	// returns error when it is not a hash
+	s.client.Set(key, value)
+	doesNotExist, err = s.client.HSet(key, field, value)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHGet(c *C) {
+	key := RandSeq(16)
+	field := RandSeq(5)
+	value := RandSeq(3)
+
+	// key does not exist
+	_, err := s.client.HGet(key, field)
+	c.Assert(err, Equals, redis.ErrNil)
+
+	// field does not exist on key
+	s.client.HSet(key, "exists", 0)
+	_, err = s.client.HGet(key, field)
+	c.Assert(err, Equals, redis.ErrNil)
+
+	// field exists on key
+	s.client.HSet(key, field, value)
+	v, err := s.client.HGet(key, field)
+	c.Assert(err, IsNil)
+	c.Assert(v, Equals, value)
+
+	// key is not a hash
+	s.client.Set(key, value)
+	_, err = s.client.HGet(key, field)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHMSet(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"a": 1,
+		"b": "x",
+	}
+	s.client.HSet(key, "original", "there")
+
+	err := s.client.HMSet(key, values)
+	c.Assert(err, IsNil)
+	actualValues, err := s.client.HGetAll(key)
+
+	c.Assert(actualValues, DeepEquals, map[string]string{
+		"original": "there",
+		"a":        "1",
+		"b":        "x",
+	})
+
+	s.client.Set(key, "garbage")
+	err = s.client.HMSet(key, values)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHMGet(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"a":     1,
+		"b":     "x",
+		"extra": "true",
+	}
+	s.client.HMSet(key, values)
+
+	queriedValues, err := s.client.HMGet(key, "a", "b")
+	c.Assert(err, IsNil)
+	c.Assert(queriedValues, DeepEquals, map[string]string{
+		"a": "1",
+		"b": "x",
+	})
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HMGet(key, "a", "b")
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHGetAll(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"a": 1,
+		"b": "x",
+	}
+	s.client.HMSet(key, values)
+
+	queriedValues, err := s.client.HGetAll(key)
+	c.Assert(err, IsNil)
+	c.Assert(queriedValues, DeepEquals, map[string]string{
+		"a": "1",
+		"b": "x",
+	})
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HGetAll(key)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHLen(c *C) {
+	key := RandSeq(16)
+	l, err := s.client.HLen(key)
+	c.Assert(err, IsNil)
+	c.Assert(l, Equals, int64(0))
+
+	s.client.HSet(key, "1", "length")
+	l, err = s.client.HLen(key)
+	c.Assert(err, IsNil)
+	c.Assert(l, Equals, int64(1))
+
+	s.client.HSet(key, "2", "length")
+	l, err = s.client.HLen(key)
+	c.Assert(err, IsNil)
+	c.Assert(l, Equals, int64(2))
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HLen(key)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHKeys(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"a": 1,
+		"b": "x",
+	}
+	s.client.HMSet(key, values)
+
+	keys, err := s.client.HKeys(key)
+	sort.StringSlice(keys).Sort()
+	c.Assert(err, IsNil)
+	c.Assert(keys, DeepEquals, []string{"a", "b"})
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HKeys(key)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHVals(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"a": 1,
+		"b": "x",
+	}
+	s.client.HMSet(key, values)
+
+	queriedValues, err := s.client.HVals(key)
+	sort.StringSlice(queriedValues).Sort()
+	c.Assert(err, IsNil)
+	c.Assert(queriedValues, DeepEquals, []string{"1", "x"})
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HVals(key)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHDel(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"a": 1,
+		"b": "x",
+		"c": true,
+	}
+	s.client.HMSet(key, values)
+
+	count, err := s.client.HDel(key, "a")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(1))
+	l, err := s.client.HLen(key)
+	c.Assert(err, IsNil)
+	c.Assert(l, Equals, int64(2))
+
+	count, err = s.client.HDel(key, "a", "b", "c")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(2))
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HDel(key, "x")
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHExists(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"a": 1,
+	}
+	s.client.HMSet(key, values)
+
+	isExist, err := s.client.HExists(key, "a")
+	c.Assert(err, IsNil)
+	c.Assert(isExist, Equals, true)
+
+	isExist, err = s.client.HExists(key, "b")
+	c.Assert(err, IsNil)
+	c.Assert(isExist, Equals, false)
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HExists(key, "x")
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHIncrBy(c *C) {
+	key := RandSeq(16)
+	field := RandSeq(3)
+	values := map[string]interface{}{
+		field: 1,
+	}
+	s.client.HMSet(key, values)
+
+	value, err := s.client.HIncrBy(key, field, 10)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, int64(11))
+
+	s.client.HSet(key, field, "1.1")
+	_, err = s.client.HIncrBy(key, field, 1)
+	c.Assert(err, NotNil)
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HIncrBy(key, "x", 4)
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHIncrByFloat(c *C) {
+	key := RandSeq(16)
+	field := RandSeq(3)
+	values := map[string]interface{}{
+		field: 1,
+	}
+	s.client.HMSet(key, values)
+
+	value, err := s.client.HIncrByFloat(key, field, 10.5)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, float64(11.5))
+
+	s.client.HSet(key, field, "1.1")
+	value, err = s.client.HIncrByFloat(key, field, 10.5)
+	c.Assert(err, IsNil)
+	c.Assert(value, Equals, 11.6)
+
+	s.client.HSet(key, field, "a")
+	_, err = s.client.HIncrByFloat(key, field, 1.1)
+	c.Assert(err, NotNil)
+
+	s.client.Set(key, "garbage")
+	_, err = s.client.HIncrByFloat(key, "x", 1.5)
+	c.Assert(err, NotNil)
 }

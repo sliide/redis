@@ -2,8 +2,8 @@ package redis
 
 import (
 	"fmt"
-	"strconv"
 	"math"
+	"strconv"
 )
 
 func ValueToString(value interface{}) string {
