@@ -1,12 +1,10 @@
-package redis_test
+package redis
 
 import (
 	"fmt"
 	"math/rand"
 	"strconv"
 	"testing"
-
-	"github.com/sliide/redis"
 
 	"time"
 
@@ -28,7 +26,7 @@ func RandSeq(n int) string {
 }
 
 type RedisTestSuite struct {
-	client redis.Client
+	client Client
 }
 
 func (s *RedisTestSuite) TestGetSetDelMGetConcurrentAccess(c *C) {
