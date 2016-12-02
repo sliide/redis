@@ -1,10 +1,6 @@
-package redis_test
+package redis
 
-import (
-	"github.com/sliide/redis"
-
-	. "gopkg.in/check.v1"
-)
+import . "gopkg.in/check.v1"
 
 type InMemoryRedisTestSuite struct {
 	RedisTestSuite
@@ -15,5 +11,5 @@ var _ = Suite(
 )
 
 func (s *InMemoryRedisTestSuite) SetUpSuite(c *C) {
-	s.client = redis.NewInMemoryClient()
+	s.client = NewInMemoryClient()
 }

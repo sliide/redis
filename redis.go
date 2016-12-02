@@ -95,3 +95,51 @@ func SetNxEx(key string, value interface{}, expire int64) (int64, error) {
 func Eval(script string, keyCount int) (interface{}, error) {
 	return client.Eval(script, keyCount)
 }
+
+func HDel(key string, fields ...string) (int64, error) {
+	return client.HDel(key, fields...)
+}
+
+func HExists(key string, field string) (bool, error) {
+	return client.HExists(key, field)
+}
+
+func HGet(key string, field string) (string, error) {
+	return client.HGet(key, field)
+}
+
+func HGetAll(key string) (map[string]string, error) {
+	return client.HGetAll(key)
+}
+
+func HLen(key string) (int64, error) {
+	return client.HLen(key)
+}
+
+func HMGet(key string, fields ...string) (map[string]string, error) {
+	return client.HMGet(key, fields...)
+}
+
+func HKeys(key string) ([]string, error) {
+	return client.HKeys(key)
+}
+
+func HMSet(key string, fields map[string]interface{}) error {
+	return client.HMSet(key, fields)
+}
+
+func HSet(key string, field string, value interface{}) (bool, error) {
+	return client.HSet(key, field, value)
+}
+
+func HVals(key string) ([]string, error) {
+	return client.HVals(key)
+}
+
+func HIncrBy(key string, field string, inc int64) (int64, error) {
+	return client.HIncrBy(key, field, inc)
+}
+
+func HIncrByFloat(key string, field string, inc float64) (float64, error) {
+	return client.HIncrByFloat(key, field, inc)
+}

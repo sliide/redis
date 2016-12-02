@@ -1,9 +1,7 @@
-package redis_test
+package redis
 
 import (
 	"fmt"
-
-	"github.com/sliide/redis"
 
 	. "gopkg.in/check.v1"
 )
@@ -17,7 +15,7 @@ var _ = Suite(
 )
 
 func (s *PoolClientTestSuite) SetUpSuite(c *C) {
-	s.client = redis.NewClient("localhost:6379")
+	s.client = NewClient("localhost:6379")
 }
 
 func (s *PoolClientTestSuite) TestEval(c *C) {

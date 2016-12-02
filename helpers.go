@@ -2,8 +2,8 @@ package redis
 
 import (
 	"fmt"
-	"strconv"
 	"math"
+	"strconv"
 )
 
 func ValueToString(value interface{}) string {
@@ -24,23 +24,38 @@ func ValueToString(value interface{}) string {
 	return ""
 }
 
-func NumberToFloat64(value interface{}) float64 {
-	var returnValue float64
-
-	switch value.(type) {
+func NumberToFloat64(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	default:
+		return 0.0, false
 	case int:
-		return float64(value.(int))
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
 	case int32:
-		return float64(value.(int32))
+		return float64(v), true
 	case int64:
-		return float64(value.(int64))
+		return float64(v), true
+	case uint:
+		return float64(v), true
+	case uint8:
+		return float64(v), true
+	case uint16:
+		return float64(v), true
+	case uint32:
+		return float64(v), true
+	case uint64:
+		return float64(v), true
 	case float32:
-		return float64(value.(float32))
+		return float64(v), true
 	case float64:
-		return value.(float64)
+		return v, true
+	case string:
+		value, err := strconv.ParseFloat(v, 64)
+		return value, err == nil
 	}
-
-	return returnValue
 }
 
 func NumberToInt64(value interface{}) (int64, bool) {

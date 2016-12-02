@@ -2,8 +2,11 @@ package redis
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 func NewInMemoryClient() Client {
@@ -263,14 +266,20 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 	case string:
 		negativeInfinite = true
 	default:
-		minScore = NumberToFloat64(min)
+		minScore, ok = NumberToFloat64(min)
+		if !ok {
+			return 0, errors.New("minimum score is not a number")
+		}
 	}
 
 	switch max.(type) {
 	case string:
 		positiveInfinite = true
 	default:
-		maxScore = NumberToFloat64(max)
+		maxScore, ok = NumberToFloat64(max)
+		if !ok {
+			return 0, errors.New("maximum score is not a number")
+		}
 	}
 
 	if negativeInfinite && positiveInfinite {
@@ -310,5 +319,261 @@ func (dc *InMemoryClient) SetNxEx(key string, value interface{}, timeout int64) 
 }
 
 func (dc *InMemoryClient) Eval(script string, keyCount int) (interface{}, error) {
+	// not implemented
 	return nil, nil
+}
+
+func (dc *InMemoryClient) getHash(key string) (map[string]string, bool) {
+	value := dc.Keys[key]
+	if value == nil {
+		return nil, true
+	}
+
+	hash, ok := value.(map[string]string)
+	return hash, ok
+}
+
+func (dc *InMemoryClient) getHashAndCreateIfNotExists(key string) (map[string]string, bool) {
+	value := dc.Keys[key]
+	if value == nil {
+		value = make(map[string]string)
+		dc.Keys[key] = value
+	}
+
+	hash, ok := value.(map[string]string)
+	return hash, ok
+}
+
+func (dc *InMemoryClient) HDel(key string, fields ...string) (int64, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return 0, errors.New("try to delete fields from non hash value")
+	}
+
+	if hash == nil {
+		return 0, nil
+	}
+
+	deleteCounts := int64(0)
+	for _, field := range fields {
+		_, ok = hash[field]
+		if ok {
+			deleteCounts++
+			delete(hash, field)
+		}
+	}
+
+	return deleteCounts, nil
+}
+
+func (dc *InMemoryClient) HExists(key string, field string) (bool, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return false, errors.New("try to delete fields from non hash value")
+	}
+
+	if hash == nil {
+		return false, nil
+	}
+
+	_, ok = hash[field]
+	return ok, nil
+}
+
+func (dc *InMemoryClient) HGet(key string, field string) (string, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return "", errors.New("try to get field from non hash value")
+	}
+
+	if hash == nil {
+		return "", redis.ErrNil
+	}
+
+	fieldValue, ok := hash[field]
+	if !ok {
+		return "", redis.ErrNil
+	}
+
+	return fieldValue, nil
+}
+
+func (dc *InMemoryClient) HGetAll(key string) (map[string]string, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return nil, errors.New("try to get all fields from non hash value")
+	}
+
+	return hash, nil
+}
+
+func (dc *InMemoryClient) HLen(key string) (int64, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return 0, errors.New("try to get length of non hash value")
+	}
+
+	return int64(len(hash)), nil
+}
+
+func (dc *InMemoryClient) HMGet(key string, fields ...string) (map[string]string, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return nil, errors.New("try to get fields from non hash value")
+	}
+
+	if hash == nil {
+		return nil, nil
+	}
+
+	filteredHash := make(map[string]string, len(fields))
+	for _, field := range fields {
+		v, ok := hash[field]
+		if ok {
+			filteredHash[field] = v
+		}
+	}
+
+	return filteredHash, nil
+}
+
+func (dc *InMemoryClient) HKeys(key string) ([]string, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return nil, errors.New("try to get keys from non hash value")
+	}
+
+	if hash == nil {
+		return nil, nil
+	}
+
+	keys := make([]string, 0, len(hash))
+	for k := range hash {
+		keys = append(keys, k)
+	}
+
+	return keys, nil
+}
+
+func (dc *InMemoryClient) HMSet(key string, fields map[string]interface{}) error {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHashAndCreateIfNotExists(key)
+	if !ok {
+		return errors.New("try to set keys on non hash value")
+	}
+
+	for field, value := range fields {
+		hash[field] = ValueToString(value)
+	}
+
+	return nil
+}
+
+func (dc *InMemoryClient) HSet(key string, field string, value interface{}) (bool, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHashAndCreateIfNotExists(key)
+	if !ok {
+		return false, errors.New("try to set keys on non hash value")
+	}
+
+	_, exists := hash[field]
+	hash[field] = ValueToString(value)
+
+	return !exists, nil
+}
+
+func (dc *InMemoryClient) HVals(key string) ([]string, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return nil, errors.New("try to get values from non hash value")
+	}
+
+	if hash == nil {
+		return nil, nil
+	}
+
+	values := make([]string, 0, len(hash))
+	for _, v := range hash {
+		values = append(values, v)
+	}
+
+	return values, nil
+}
+
+func (dc *InMemoryClient) HIncrBy(key string, field string, inc int64) (int64, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHashAndCreateIfNotExists(key)
+	if !ok {
+		return 0, errors.New("try to increase field value on non hash value")
+	}
+
+	value := hash[field]
+	if len(value) == 0 {
+		value = "0"
+	}
+
+	number, ok := NumberToInt64(value)
+	if !ok {
+		return 0, errors.New("value to be increased can not be converted to integer")
+	}
+
+	number += inc
+
+	hash[field] = ValueToString(number)
+	return number, nil
+}
+
+func (dc *InMemoryClient) HIncrByFloat(key string, field string, inc float64) (float64, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHashAndCreateIfNotExists(key)
+	if !ok {
+		return 0, errors.New("try to increase field value on non hash value")
+	}
+
+	value := hash[field]
+	if len(value) == 0 {
+		value = "0.0"
+	}
+
+	number, ok := NumberToFloat64(value)
+	if !ok {
+		return 0, errors.New("value to be increased can not be converted to float")
+	}
+
+	number += inc
+
+	hash[field] = fmt.Sprintf("%f", number)
+	return number, nil
 }
