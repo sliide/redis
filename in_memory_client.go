@@ -157,6 +157,31 @@ func (dc *InMemoryClient) IncrBy(key string, inc int64) (val int64, err error) {
 	return numericValue, nil
 }
 
+func (dc *InMemoryClient) IncrByFloat(key string, inc float64) (float64, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	value, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
+
+	if hasExpire && time.Now().After(expire) {
+		ok = false
+		delete(dc.Expires, key)
+	}
+
+	var numericValue float64 = 0
+	if ok {
+		numericValue, ok = NumberToFloat64(value)
+		if !ok {
+			return 0, errors.New("Stored value can not be converted to float64")
+		}
+	}
+
+	numericValue += inc
+	dc.Keys[key] = numericValue
+	return numericValue, nil
+}
+
 func (dc *InMemoryClient) Expire(key string, expire int64) (bool, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()

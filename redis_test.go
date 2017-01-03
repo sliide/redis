@@ -80,6 +80,27 @@ func (s *RedisTestSuite) TestIncrBy(c *C) {
 	c.Assert(val, Equals, strconv.Itoa(11))
 }
 
+func (s *RedisTestSuite) TestIncrByFloat(c *C) {
+	key := RandSeq(32)
+
+	incrVal, err := s.client.IncrByFloat(key, 10.5)
+	c.Assert(err, IsNil)
+	c.Assert(incrVal, Equals, float64(10.5))
+
+	c.Assert(s.client.Set(key, 1.1), IsNil)
+	newVal, err := s.client.IncrByFloat(key, 10.5)
+
+	c.Assert(err, IsNil)
+
+	c.Assert(newVal, Equals, float64(11.6))
+
+	val, err := s.client.Get(key)
+	c.Assert(err, IsNil)
+	n, ok := NumberToFloat64(val)
+	c.Assert(ok, Equals, true)
+	c.Assert(n, Equals, 11.6)
+}
+
 func (s *RedisTestSuite) TestExpire(c *C) {
 	key := RandSeq(32)
 
