@@ -107,6 +107,13 @@ func (pc *PooledClient) IncrBy(key string, inc int64) (int64, error) {
 	return redis.Int64(c.Do("INCRBY", key, inc))
 }
 
+func (pc *PooledClient) IncrByFloat(key string, inc float64) (float64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Float64(c.Do("INCRBYFLOAT", key, inc))
+}
+
 func (pc *PooledClient) Expire(key string, seconds int64) (bool, error) {
 	c := pc.pool.Get()
 	defer c.Close()

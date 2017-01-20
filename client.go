@@ -12,6 +12,7 @@ type Client interface {
 	Del(keys ...string) (int64, error)
 	Incr(key string) (int64, error)
 	IncrBy(key string, inc int64) (int64, error)
+	IncrByFloat(key string, inc float64) (float64, error)
 
 	Eval(string, int) (interface{}, error)
 
