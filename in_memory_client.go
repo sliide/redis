@@ -326,6 +326,64 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 	return count, nil
 }
 
+type set map[string]interface{}
+
+func (s *set) Add(members ...string) {
+	for _, member := range members {
+		(*s)[member] = nil
+	}
+}
+
+func (s set) Members() []string {
+	retVal := make([]string, 0, len(s))
+	for m := range s {
+		retVal = append(retVal, m)
+	}
+	return retVal
+}
+
+func (dc *InMemoryClient) SAdd(key string, members ...string) (int64, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	value, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
+
+	if !ok || (hasExpire && time.Now().After(expire)) {
+		newSet := make(set, len(members))
+		newSet.Add(members...)
+		dc.Keys[key] = newSet
+		return int64(len(newSet)), nil
+	}
+
+	existingSet, ok := value.(set)
+	if !ok {
+		return 0, errors.New("Stored value is not a set")
+	}
+	oldSize := len(existingSet)
+	existingSet.Add(members...)
+
+	return int64(len(existingSet) - oldSize), nil
+}
+
+func (dc *InMemoryClient) SMembers(key string) ([]string, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	value, ok := dc.Keys[key]
+	expire, hasExpire := dc.Expires[key]
+
+	if !ok || (hasExpire && time.Now().After(expire)) {
+		return []string{}, nil
+	}
+	existingSet, ok := value.(set)
+	if !ok {
+		return nil, errors.New("Stored value is not a set")
+	}
+
+	return existingSet.Members(), nil
+}
+
 func (dc *InMemoryClient) SetNxEx(key string, value interface{}, timeout int64) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()

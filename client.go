@@ -24,6 +24,9 @@ type Client interface {
 	ZAdd(key string, score float64, value interface{}) (int64, error)
 	ZCount(key string, min interface{}, max interface{}) (int64, error)
 
+	SAdd(key string, members ...string) (int64, error)
+	SMembers(key string) ([]string, error)
+
 	HDel(key string, fields ...string) (int64, error)
 	HExists(key string, field string) (bool, error)
 	HGet(key string, field string) (string, error)

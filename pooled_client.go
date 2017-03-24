@@ -150,6 +150,20 @@ func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (in
 	return redis.Int64(c.Do("ZCOUNT", key, min, max))
 }
 
+func (pc *PooledClient) SAdd(key string, members ...string) (int64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Int64(c.Do("SADD", interfaceSlice(append([]string{key}, members...))...))
+}
+
+func (pc *PooledClient) SMembers(key string) ([]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Strings(c.Do("SMEMBERS", key))
+}
+
 func (pc *PooledClient) SetNxEx(key string, value interface{}, expire int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
