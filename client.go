@@ -35,6 +35,7 @@ type Client interface {
 	HLen(key string) (int64, error)
 	HKeys(key string) ([]string, error)
 	HVals(key string) ([]string, error)
+	HScan(key string, pattern string) (map[string]string, error)
 	HSet(key string, field string, value interface{}) (bool, error)
 	HMSet(key string, fields map[string]interface{}) error
 	HIncrBy(key string, field string, inc int64) (int64, error)

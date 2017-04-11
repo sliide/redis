@@ -271,6 +271,31 @@ func (pc *PooledClient) HVals(key string) ([]string, error) {
 	return redis.Strings(c.Do("HVALS", key))
 }
 
+func (pc *PooledClient) HScan(key string, pattern string) (map[string]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	if pattern == "" {
+		pattern = "*"
+	}
+
+	cursor := "0"
+	keysValues := make([]interface{}, 0)
+	for {
+		values, err := redis.Values(c.Do("HSCAN", key, cursor, "MATCH", pattern))
+		if err != nil {
+			return nil, err
+		}
+		keysValues = append(keysValues, values[1].([]interface{})...)
+		cursor = string(values[0].([]byte))
+		if cursor == "0" {
+			break
+		}
+	}
+
+	return redis.StringMap(keysValues, nil)
+}
+
 func (pc *PooledClient) HIncrBy(key string, field string, inc int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()

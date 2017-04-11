@@ -586,6 +586,20 @@ func (s *RedisTestSuite) TestHVals(c *C) {
 	c.Assert(err, NotNil)
 }
 
+func (s *RedisTestSuite) TestHScan(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"aaa": 1,
+		"aba": "x",
+	}
+	s.client.HMSet(key, values)
+
+	hash, err := s.client.HScan(key, "aa*")
+	c.Assert(err, IsNil)
+	c.Assert(hash, HasLen, 1)
+	c.Assert(hash["aaa"], Equals, "1")
+}
+
 func (s *RedisTestSuite) TestHDel(c *C) {
 	key := RandSeq(16)
 	values := map[string]interface{}{

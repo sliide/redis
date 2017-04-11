@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/gobwas/glob"
 )
 
 func NewInMemoryClient() Client {
@@ -609,6 +610,33 @@ func (dc *InMemoryClient) HVals(key string) ([]string, error) {
 	}
 
 	return values, nil
+}
+
+func (dc *InMemoryClient) HScan(key string, pattern string) (map[string]string, error) {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	hash, ok := dc.getHash(key)
+	if !ok {
+		return nil, errors.New("try to get values from non hash value")
+	}
+
+	if hash == nil {
+		return nil, nil
+	}
+
+	matcher, err := glob.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	matchedHash := make(map[string]string, 0)
+	for k, v := range hash {
+		if matcher.Match(k) {
+			matchedHash[k] = v
+		}
+	}
+
+	return matchedHash, nil
 }
 
 func (dc *InMemoryClient) HIncrBy(key string, field string, inc int64) (int64, error) {
