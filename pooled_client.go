@@ -291,7 +291,7 @@ func zipMap(keys, values []string) map[string]string {
 	}
 
 	hash := make(map[string]string, len(keys))
-	for i := 0; i < len(keys); i++ {
+	for i := range keys {
 		hash[keys[i]] = values[i]
 	}
 	return hash
