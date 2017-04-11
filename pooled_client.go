@@ -126,14 +126,14 @@ func (pc *PooledClient) Del(keys ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int64(c.Do("DEL", interfaceSlice(keys)...))
+	return redis.Int64(c.Do("DEL", redis.Args{}.AddFlat(keys)...))
 }
 
 func (pc *PooledClient) MGet(keys ...string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Strings(c.Do("MGET", interfaceSlice(keys)...))
+	return redis.Strings(c.Do("MGET", redis.Args{}.AddFlat(keys)...))
 }
 
 func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
@@ -154,7 +154,7 @@ func (pc *PooledClient) SAdd(key string, members ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int64(c.Do("SADD", interfaceSlice(append([]string{key}, members...))...))
+	return redis.Int64(c.Do("SADD", redis.Args{key}.AddFlat(members)...))
 }
 
 func (pc *PooledClient) SMembers(key string) ([]string, error) {
@@ -194,7 +194,7 @@ func (pc *PooledClient) HDel(key string, fields ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int64(c.Do("HDEL", interfaceSlice(append([]string{key}, fields...))...))
+	return redis.Int64(c.Do("HDEL", redis.Args{key}.AddFlat(fields)...))
 }
 
 func (pc *PooledClient) HExists(key string, field string) (bool, error) {
@@ -233,7 +233,7 @@ func (pc *PooledClient) HMGet(key string, fields ...string) (map[string]string, 
 	c := pc.pool.Get()
 	defer c.Close()
 
-	values, err := redis.Strings(c.Do("HMGET", interfaceSlice(append([]string{key}, fields...))...))
+	values, err := redis.Strings(c.Do("HMGET", redis.Args{key}.AddFlat(fields)...))
 	if err != nil {
 		return nil, err
 	}
