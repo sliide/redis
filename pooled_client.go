@@ -215,11 +215,7 @@ func (pc *PooledClient) HGetAll(key string) (map[string]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	keysValues, err := redis.Strings(c.Do("HGETALL", key))
-	if err != nil {
-		return nil, err
-	}
-	return stringMap(keysValues), nil
+	return redis.StringMap(c.Do("HGETALL", key))
 }
 
 func (pc *PooledClient) HLen(key string) (int64, error) {
@@ -287,18 +283,6 @@ func (pc *PooledClient) HIncrByFloat(key string, field string, inc float64) (flo
 	defer c.Close()
 
 	return redis.Float64(c.Do("HINCRBYFLOAT", key, field, inc))
-}
-
-func stringMap(keysValues []string) map[string]string {
-	if len(keysValues)%2 == 1 {
-		return nil
-	}
-
-	hash := make(map[string]string, len(keysValues)/2)
-	for i := 0; i < len(keysValues); i += 2 {
-		hash[keysValues[i]] = keysValues[i+1]
-	}
-	return hash
 }
 
 func zipMap(keys, values []string) map[string]string {
