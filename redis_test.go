@@ -322,6 +322,63 @@ func (s *RedisTestSuite) TestZCountNotExistentKey(c *C) {
 	c.Assert(count, Equals, int64(0))
 }
 
+func (s *RedisTestSuite) TestSAdd(c *C) {
+	key := RandSeq(32)
+	count, err := s.client.SAdd(key, "a")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(1))
+
+	count, err = s.client.SAdd(key, "a")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(0))
+
+	count, err = s.client.SAdd(key, "a", "b")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(1))
+
+	count, err = s.client.SAdd(key, "c", "d")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(2))
+
+	err = s.client.Set(key, "string")
+	c.Assert(err, IsNil)
+
+	_, err = s.client.SAdd(key, "a")
+	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestSMembers(c *C) {
+	key := RandSeq(32)
+
+	count, err := s.client.SAdd(key, "a", "b", "c", "a")
+	c.Assert(err, IsNil)
+	c.Assert(count, Equals, int64(3))
+
+	members, err := s.client.SMembers(key)
+	c.Assert(err, IsNil)
+	c.Assert(members, HasLen, 3)
+	var hasA, hasB, hasC bool
+	for _, v := range members {
+		switch v {
+		case "a":
+			hasA = true
+		case "b":
+			hasB = true
+		case "c":
+			hasC = true
+		}
+	}
+	c.Assert(hasA, Equals, true)
+	c.Assert(hasB, Equals, true)
+	c.Assert(hasC, Equals, true)
+
+	err = s.client.Set(key, "string")
+	c.Assert(err, IsNil)
+
+	_, err = s.client.SMembers(key)
+	c.Assert(err, NotNil)
+}
+
 func (s *RedisTestSuite) TestSetResetsExpire(c *C) {
 	key := RandSeq(32)
 	s.client.SetEx(key, 1, 1)
@@ -527,6 +584,20 @@ func (s *RedisTestSuite) TestHVals(c *C) {
 	s.client.Set(key, "garbage")
 	_, err = s.client.HVals(key)
 	c.Assert(err, NotNil)
+}
+
+func (s *RedisTestSuite) TestHScan(c *C) {
+	key := RandSeq(16)
+	values := map[string]interface{}{
+		"aaa": 1,
+		"aba": "x",
+	}
+	s.client.HMSet(key, values)
+
+	hash, err := s.client.HScan(key, "aa*")
+	c.Assert(err, IsNil)
+	c.Assert(hash, HasLen, 1)
+	c.Assert(hash["aaa"], Equals, "1")
 }
 
 func (s *RedisTestSuite) TestHDel(c *C) {

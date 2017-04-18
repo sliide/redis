@@ -126,14 +126,14 @@ func (pc *PooledClient) Del(keys ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int64(c.Do("DEL", interfaceSlice(keys)...))
+	return redis.Int64(c.Do("DEL", redis.Args{}.AddFlat(keys)...))
 }
 
 func (pc *PooledClient) MGet(keys ...string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Strings(c.Do("MGET", interfaceSlice(keys)...))
+	return redis.Strings(c.Do("MGET", redis.Args{}.AddFlat(keys)...))
 }
 
 func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
@@ -148,6 +148,20 @@ func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (in
 	defer c.Close()
 
 	return redis.Int64(c.Do("ZCOUNT", key, min, max))
+}
+
+func (pc *PooledClient) SAdd(key string, members ...string) (int64, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Int64(c.Do("SADD", redis.Args{key}.AddFlat(members)...))
+}
+
+func (pc *PooledClient) SMembers(key string) ([]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	return redis.Strings(c.Do("SMEMBERS", key))
 }
 
 func (pc *PooledClient) SetNxEx(key string, value interface{}, expire int64) (int64, error) {
@@ -180,7 +194,7 @@ func (pc *PooledClient) HDel(key string, fields ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	return redis.Int64(c.Do("HDEL", interfaceSlice(append([]string{key}, fields...))...))
+	return redis.Int64(c.Do("HDEL", redis.Args{key}.AddFlat(fields)...))
 }
 
 func (pc *PooledClient) HExists(key string, field string) (bool, error) {
@@ -201,11 +215,7 @@ func (pc *PooledClient) HGetAll(key string) (map[string]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
-	keysValues, err := redis.Strings(c.Do("HGETALL", key))
-	if err != nil {
-		return nil, err
-	}
-	return stringMap(keysValues), nil
+	return redis.StringMap(c.Do("HGETALL", key))
 }
 
 func (pc *PooledClient) HLen(key string) (int64, error) {
@@ -219,7 +229,7 @@ func (pc *PooledClient) HMGet(key string, fields ...string) (map[string]string, 
 	c := pc.pool.Get()
 	defer c.Close()
 
-	values, err := redis.Strings(c.Do("HMGET", interfaceSlice(append([]string{key}, fields...))...))
+	values, err := redis.Strings(c.Do("HMGET", redis.Args{key}.AddFlat(fields)...))
 	if err != nil {
 		return nil, err
 	}
@@ -261,6 +271,31 @@ func (pc *PooledClient) HVals(key string) ([]string, error) {
 	return redis.Strings(c.Do("HVALS", key))
 }
 
+func (pc *PooledClient) HScan(key string, pattern string) (map[string]string, error) {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	if pattern == "" {
+		pattern = "*"
+	}
+
+	cursor := "0"
+	keysValues := make([]interface{}, 0)
+	for {
+		values, err := redis.Values(c.Do("HSCAN", key, cursor, "MATCH", pattern))
+		if err != nil {
+			return nil, err
+		}
+		keysValues = append(keysValues, values[1].([]interface{})...)
+		cursor = string(values[0].([]byte))
+		if cursor == "0" {
+			break
+		}
+	}
+
+	return redis.StringMap(keysValues, nil)
+}
+
 func (pc *PooledClient) HIncrBy(key string, field string, inc int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
@@ -275,25 +310,13 @@ func (pc *PooledClient) HIncrByFloat(key string, field string, inc float64) (flo
 	return redis.Float64(c.Do("HINCRBYFLOAT", key, field, inc))
 }
 
-func stringMap(keysValues []string) map[string]string {
-	if len(keysValues)%2 == 1 {
-		return nil
-	}
-
-	hash := make(map[string]string, len(keysValues)/2)
-	for i := 0; i < len(keysValues); i += 2 {
-		hash[keysValues[i]] = keysValues[i+1]
-	}
-	return hash
-}
-
 func zipMap(keys, values []string) map[string]string {
 	if len(keys) != len(values) {
 		return nil
 	}
 
 	hash := make(map[string]string, len(keys))
-	for i := 0; i < len(keys); i++ {
+	for i := range keys {
 		hash[keys[i]] = values[i]
 	}
 	return hash

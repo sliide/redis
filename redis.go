@@ -1,8 +1,6 @@
 package redis
 
-import (
-	"errors"
-)
+import "errors"
 
 var client Client = nil
 
@@ -86,6 +84,14 @@ func ZAdd(key string, score float64, value interface{}) (int64, error) {
 
 func ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	return client.ZCount(key, min, max)
+}
+
+func SAdd(key string, members ...string) (int64, error) {
+	return client.SAdd(key, members...)
+}
+
+func SMembers(key string) ([]string, error) {
+	return client.SMembers(key)
 }
 
 func SetNxEx(key string, value interface{}, expire int64) (int64, error) {
