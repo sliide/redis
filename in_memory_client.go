@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
 	"github.com/gobwas/glob"
+	"github.com/gomodule/redigo/redis"
 )
 
 func NewInMemoryClient() Client {
