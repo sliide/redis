@@ -2,12 +2,17 @@ package redis
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/ory/dockertest"
 	. "gopkg.in/check.v1"
 )
 
 type PoolClientTestSuite struct {
 	RedisTestSuite
+
+	pool     *dockertest.Pool
+	resource *dockertest.Resource
 }
 
 var _ = Suite(
@@ -15,7 +20,34 @@ var _ = Suite(
 )
 
 func (s *PoolClientTestSuite) SetUpSuite(c *C) {
-	s.client = NewClient("localhost:6379")
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		log.Fatalf("Failed to create docker client: %s", err)
+	}
+
+	resource, err := pool.Run("redis", "latest", []string{})
+	if err != nil {
+		c.Fatalf("Failed to run Redis docker container: %s", err)
+	}
+
+	s.pool = pool
+	s.resource = resource
+
+	if err := pool.Retry(func() error {
+		host := resource.GetBoundIP("6379/tcp")
+		port := resource.GetPort("6379/tcp")
+		url := fmt.Sprintf("%s:%s", host, port)
+
+		s.client = NewClient(url)
+		return nil
+	}); err != nil {
+		c.Fatalf("Failed to connect to Redis docker container: %s", err)
+	}
+}
+
+func (s *PoolClientTestSuite) TearDownSuite(c *C) {
+	s.client.Close()
+	s.pool.Purge(s.resource)
 }
 
 func (s *PoolClientTestSuite) TestEval(c *C) {
