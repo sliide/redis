@@ -5,6 +5,9 @@ type Client interface {
 	// Close the client connection
 	Close()
 
+	// Ping the service to check connection
+	Ping() error
+
 	// Get return a value from the storage by a given key
 	// see https://redis.io/commands/Get for the details
 	Get(key string) (string, error)

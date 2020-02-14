@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func ValueToString(value interface{}) string {
+func valueToString(value interface{}) string {
 	switch value.(type) {
 	case string:
 		return value.(string)
@@ -24,7 +24,7 @@ func ValueToString(value interface{}) string {
 	return ""
 }
 
-func NumberToFloat64(value interface{}) (float64, bool) {
+func numberToFloat64(value interface{}) (float64, bool) {
 	switch v := value.(type) {
 	default:
 		return 0.0, false
@@ -58,7 +58,7 @@ func NumberToFloat64(value interface{}) (float64, bool) {
 	}
 }
 
-func NumberToInt64(value interface{}) (int64, bool) {
+func numberToInt64(value interface{}) (int64, bool) {
 	switch v := value.(type) {
 	default:
 		return 0, false

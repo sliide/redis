@@ -3,15 +3,12 @@ package redis
 import (
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 )
 
-type PooledClient struct {
-	pool redis.Pool
-}
-
+// NewClient returns a new redis
 func NewClient(server string) Client {
-	return &PooledClient{
+	return &pooledClient{
 		*newPool(server),
 	}
 }
@@ -34,18 +31,30 @@ func newPool(server string) *redis.Pool {
 	}
 }
 
-func (pc *PooledClient) Close() {
+type pooledClient struct {
+	pool redis.Pool
+}
+
+func (pc *pooledClient) Close() {
 	pc.pool.Close()
 }
 
-func (pc *PooledClient) Get(key string) (string, error) {
+func (pc *pooledClient) Ping() error {
+	c := pc.pool.Get()
+	defer c.Close()
+
+	_, err := c.Do("PING")
+	return err
+}
+
+func (pc *pooledClient) Get(key string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.String(c.Do("GET", key))
 }
 
-func (pc *PooledClient) Set(key string, value interface{}) error {
+func (pc *pooledClient) Set(key string, value interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -56,7 +65,7 @@ func (pc *PooledClient) Set(key string, value interface{}) error {
 	return err
 }
 
-func (pc *PooledClient) SetEx(key string, expire int64, value interface{}) error {
+func (pc *pooledClient) SetEx(key string, expire int64, value interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -65,56 +74,56 @@ func (pc *PooledClient) SetEx(key string, expire int64, value interface{}) error
 	return err
 }
 
-func (pc *PooledClient) LPush(key string, value string) (int64, error) {
+func (pc *pooledClient) LPush(key string, value string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("LPUSH", key, value))
 }
 
-func (pc *PooledClient) RPush(key string, value string) (int64, error) {
+func (pc *pooledClient) RPush(key string, value string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("RPUSH", key, value))
 }
 
-func (pc *PooledClient) LRange(key string) ([]string, error) {
+func (pc *pooledClient) LRange(key string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Strings(c.Do("LRANGE", key, 0, -1))
 }
 
-func (pc *PooledClient) LPop(key string) (string, error) {
+func (pc *pooledClient) LPop(key string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.String(c.Do("LPOP", key))
 }
 
-func (pc *PooledClient) Incr(key string) (int64, error) {
+func (pc *pooledClient) Incr(key string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("INCR", key))
 }
 
-func (pc *PooledClient) IncrBy(key string, inc int64) (int64, error) {
+func (pc *pooledClient) IncrBy(key string, inc int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("INCRBY", key, inc))
 }
 
-func (pc *PooledClient) IncrByFloat(key string, inc float64) (float64, error) {
+func (pc *pooledClient) IncrByFloat(key string, inc float64) (float64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Float64(c.Do("INCRBYFLOAT", key, inc))
 }
 
-func (pc *PooledClient) Expire(key string, seconds int64) (bool, error) {
+func (pc *pooledClient) Expire(key string, seconds int64) (bool, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -122,49 +131,49 @@ func (pc *PooledClient) Expire(key string, seconds int64) (bool, error) {
 	return result == 1, err
 }
 
-func (pc *PooledClient) Del(keys ...string) (int64, error) {
+func (pc *pooledClient) Del(keys ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("DEL", redis.Args{}.AddFlat(keys)...))
 }
 
-func (pc *PooledClient) MGet(keys ...string) ([]string, error) {
+func (pc *pooledClient) MGet(keys ...string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Strings(c.Do("MGET", redis.Args{}.AddFlat(keys)...))
 }
 
-func (pc *PooledClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
+func (pc *pooledClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("ZADD", key, score, value))
 }
 
-func (pc *PooledClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
+func (pc *pooledClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("ZCOUNT", key, min, max))
 }
 
-func (pc *PooledClient) SAdd(key string, members ...string) (int64, error) {
+func (pc *pooledClient) SAdd(key string, members ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("SADD", redis.Args{key}.AddFlat(members)...))
 }
 
-func (pc *PooledClient) SMembers(key string) ([]string, error) {
+func (pc *pooledClient) SMembers(key string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Strings(c.Do("SMEMBERS", key))
 }
 
-func (pc *PooledClient) SetNxEx(key string, value interface{}, expire int64) (int64, error) {
+func (pc *pooledClient) SetNxEx(key string, value interface{}, expire int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -181,7 +190,7 @@ func (pc *PooledClient) SetNxEx(key string, value interface{}, expire int64) (in
 	}
 }
 
-func (pc *PooledClient) Eval(script string, keyCount int) (interface{}, error) {
+func (pc *pooledClient) Eval(script string, keyCount int) (interface{}, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -190,42 +199,42 @@ func (pc *PooledClient) Eval(script string, keyCount int) (interface{}, error) {
 	return redisScript.Do(c)
 }
 
-func (pc *PooledClient) HDel(key string, fields ...string) (int64, error) {
+func (pc *pooledClient) HDel(key string, fields ...string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("HDEL", redis.Args{key}.AddFlat(fields)...))
 }
 
-func (pc *PooledClient) HExists(key string, field string) (bool, error) {
+func (pc *pooledClient) HExists(key string, field string) (bool, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Bool(c.Do("HEXISTS", key, field))
 }
 
-func (pc *PooledClient) HGet(key string, field string) (string, error) {
+func (pc *pooledClient) HGet(key string, field string) (string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.String(c.Do("HGET", key, field))
 }
 
-func (pc *PooledClient) HGetAll(key string) (map[string]string, error) {
+func (pc *pooledClient) HGetAll(key string) (map[string]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.StringMap(c.Do("HGETALL", key))
 }
 
-func (pc *PooledClient) HLen(key string) (int64, error) {
+func (pc *pooledClient) HLen(key string) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("HLEN", key))
 }
 
-func (pc *PooledClient) HMGet(key string, fields ...string) (map[string]string, error) {
+func (pc *pooledClient) HMGet(key string, fields ...string) (map[string]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -237,14 +246,14 @@ func (pc *PooledClient) HMGet(key string, fields ...string) (map[string]string, 
 	return zipMap(fields, values), nil
 }
 
-func (pc *PooledClient) HKeys(key string) ([]string, error) {
+func (pc *pooledClient) HKeys(key string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Strings(c.Do("HKEYS", key))
 }
 
-func (pc *PooledClient) HMSet(key string, fields map[string]interface{}) error {
+func (pc *pooledClient) HMSet(key string, fields map[string]interface{}) error {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -257,21 +266,21 @@ func (pc *PooledClient) HMSet(key string, fields map[string]interface{}) error {
 	return err
 }
 
-func (pc *PooledClient) HSet(key string, field string, value interface{}) (bool, error) {
+func (pc *pooledClient) HSet(key string, field string, value interface{}) (bool, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Bool(c.Do("HSET", key, field, value))
 }
 
-func (pc *PooledClient) HVals(key string) ([]string, error) {
+func (pc *pooledClient) HVals(key string) ([]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Strings(c.Do("HVALS", key))
 }
 
-func (pc *PooledClient) HScan(key string, pattern string) (map[string]string, error) {
+func (pc *pooledClient) HScan(key string, pattern string) (map[string]string, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
@@ -296,14 +305,14 @@ func (pc *PooledClient) HScan(key string, pattern string) (map[string]string, er
 	return redis.StringMap(keysValues, nil)
 }
 
-func (pc *PooledClient) HIncrBy(key string, field string, inc int64) (int64, error) {
+func (pc *pooledClient) HIncrBy(key string, field string, inc int64) (int64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 
 	return redis.Int64(c.Do("HINCRBY", key, field, inc))
 }
 
-func (pc *PooledClient) HIncrByFloat(key string, field string, inc float64) (float64, error) {
+func (pc *pooledClient) HIncrByFloat(key string, field string, inc float64) (float64, error) {
 	c := pc.pool.Get()
 	defer c.Close()
 

@@ -6,27 +6,33 @@ import (
 	"sync"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
 	"github.com/gobwas/glob"
+	"github.com/gomodule/redigo/redis"
 )
 
-func NewInMemoryClient() Client {
-	return &InMemoryClient{
+// NewMemoryClient returns a redis client that running in the memory
+// NOTE: Use for the debug purpose
+func NewMemoryClient() Client {
+	return &memoryClient{
 		Keys:    map[string]interface{}{},
 		Expires: map[string]time.Time{},
 		mu:      sync.Mutex{},
 	}
 }
 
-type InMemoryClient struct {
+type memoryClient struct {
 	Keys    map[string]interface{}
 	Expires map[string]time.Time
 	mu      sync.Mutex
 }
 
-func (dc *InMemoryClient) Close() {}
+func (dc *memoryClient) Close() {}
 
-func (dc *InMemoryClient) Get(key string) (val string, err error) {
+func (dc *memoryClient) Ping() error {
+	return nil
+}
+
+func (dc *memoryClient) Get(key string) (val string, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -37,10 +43,10 @@ func (dc *InMemoryClient) Get(key string) (val string, err error) {
 		return "", errors.New("redigo: nil returned")
 	}
 
-	return ValueToString(value), nil
+	return valueToString(value), nil
 }
 
-func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
+func (dc *memoryClient) Set(key string, value interface{}) (err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -49,7 +55,7 @@ func (dc *InMemoryClient) Set(key string, value interface{}) (err error) {
 	return nil
 }
 
-func (dc *InMemoryClient) SetEx(key string, expire int64, value interface{}) (err error) {
+func (dc *memoryClient) SetEx(key string, expire int64, value interface{}) (err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -58,7 +64,7 @@ func (dc *InMemoryClient) SetEx(key string, expire int64, value interface{}) (er
 	return nil
 }
 
-func (dc *InMemoryClient) LPush(key string, value string) (length int64, err error) {
+func (dc *memoryClient) LPush(key string, value string) (length int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -78,7 +84,7 @@ func (dc *InMemoryClient) LPush(key string, value string) (length int64, err err
 	return int64(len(array) + 1), nil
 }
 
-func (dc *InMemoryClient) RPush(key string, value string) (length int64, err error) {
+func (dc *memoryClient) RPush(key string, value string) (length int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -96,7 +102,7 @@ func (dc *InMemoryClient) RPush(key string, value string) (length int64, err err
 	return int64(len(array) + 1), nil
 }
 
-func (dc *InMemoryClient) LRange(key string) (vals []string, err error) {
+func (dc *memoryClient) LRange(key string) (vals []string, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -106,7 +112,7 @@ func (dc *InMemoryClient) LRange(key string) (vals []string, err error) {
 	return []string{}, nil
 }
 
-func (dc *InMemoryClient) LPop(key string) (val string, err error) {
+func (dc *memoryClient) LPop(key string) (val string, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -129,11 +135,11 @@ func (dc *InMemoryClient) LPop(key string) (val string, err error) {
 	return returnValue, nil
 }
 
-func (dc *InMemoryClient) Incr(key string) (val int64, err error) {
+func (dc *memoryClient) Incr(key string) (val int64, err error) {
 	return dc.IncrBy(key, 1)
 }
 
-func (dc *InMemoryClient) IncrBy(key string, inc int64) (val int64, err error) {
+func (dc *memoryClient) IncrBy(key string, inc int64) (val int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -147,7 +153,7 @@ func (dc *InMemoryClient) IncrBy(key string, inc int64) (val int64, err error) {
 
 	var numericValue int64 = 0
 	if ok {
-		numericValue, ok = NumberToInt64(value)
+		numericValue, ok = numberToInt64(value)
 		if !ok {
 			return 0, errors.New("Stored value can not be converted to int64")
 		}
@@ -158,7 +164,7 @@ func (dc *InMemoryClient) IncrBy(key string, inc int64) (val int64, err error) {
 	return numericValue, nil
 }
 
-func (dc *InMemoryClient) IncrByFloat(key string, inc float64) (float64, error) {
+func (dc *memoryClient) IncrByFloat(key string, inc float64) (float64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -172,7 +178,7 @@ func (dc *InMemoryClient) IncrByFloat(key string, inc float64) (float64, error) 
 
 	var numericValue float64 = 0
 	if ok {
-		numericValue, ok = NumberToFloat64(value)
+		numericValue, ok = numberToFloat64(value)
 		if !ok {
 			return 0, errors.New("Stored value can not be converted to float64")
 		}
@@ -183,7 +189,7 @@ func (dc *InMemoryClient) IncrByFloat(key string, inc float64) (float64, error) 
 	return numericValue, nil
 }
 
-func (dc *InMemoryClient) Expire(key string, expire int64) (bool, error) {
+func (dc *memoryClient) Expire(key string, expire int64) (bool, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -195,7 +201,7 @@ func (dc *InMemoryClient) Expire(key string, expire int64) (bool, error) {
 	return true, nil
 }
 
-func (dc *InMemoryClient) Del(keys ...string) (count int64, err error) {
+func (dc *memoryClient) Del(keys ...string) (count int64, err error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -209,7 +215,7 @@ func (dc *InMemoryClient) Del(keys ...string) (count int64, err error) {
 	return count, nil
 }
 
-func (dc *InMemoryClient) MGet(keys ...string) ([]string, error) {
+func (dc *memoryClient) MGet(keys ...string) ([]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -222,14 +228,14 @@ func (dc *InMemoryClient) MGet(keys ...string) ([]string, error) {
 		if !ok || (hasExpire && time.Now().After(expire)) {
 			values = append(values, "")
 		} else {
-			values = append(values, ValueToString(value))
+			values = append(values, valueToString(value))
 		}
 	}
 
 	return values, nil
 }
 
-func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
+func (dc *memoryClient) ZAdd(key string, score float64, value interface{}) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -270,7 +276,7 @@ func (dc *InMemoryClient) ZAdd(key string, score float64, value interface{}) (in
 	return 1, nil
 }
 
-func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
+func (dc *memoryClient) ZCount(key string, min interface{}, max interface{}) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -292,7 +298,7 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 	case string:
 		negativeInfinite = true
 	default:
-		minScore, ok = NumberToFloat64(min)
+		minScore, ok = numberToFloat64(min)
 		if !ok {
 			return 0, errors.New("minimum score is not a number")
 		}
@@ -302,7 +308,7 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 	case string:
 		positiveInfinite = true
 	default:
-		maxScore, ok = NumberToFloat64(max)
+		maxScore, ok = numberToFloat64(max)
 		if !ok {
 			return 0, errors.New("maximum score is not a number")
 		}
@@ -320,7 +326,7 @@ func (dc *InMemoryClient) ZCount(key string, min interface{}, max interface{}) (
 			(currentScore >= minScore && currentScore < maxScore) ||
 			(currentScore >= minScore && positiveInfinite) {
 
-			count += 1
+			count = count + 1
 		}
 	}
 
@@ -343,7 +349,7 @@ func (s set) Members() []string {
 	return retVal
 }
 
-func (dc *InMemoryClient) SAdd(key string, members ...string) (int64, error) {
+func (dc *memoryClient) SAdd(key string, members ...string) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -367,7 +373,7 @@ func (dc *InMemoryClient) SAdd(key string, members ...string) (int64, error) {
 	return int64(len(existingSet) - oldSize), nil
 }
 
-func (dc *InMemoryClient) SMembers(key string) ([]string, error) {
+func (dc *memoryClient) SMembers(key string) ([]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -385,7 +391,7 @@ func (dc *InMemoryClient) SMembers(key string) ([]string, error) {
 	return existingSet.Members(), nil
 }
 
-func (dc *InMemoryClient) SetNxEx(key string, value interface{}, timeout int64) (int64, error) {
+func (dc *memoryClient) SetNxEx(key string, value interface{}, timeout int64) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -402,12 +408,12 @@ func (dc *InMemoryClient) SetNxEx(key string, value interface{}, timeout int64) 
 	return 1, nil
 }
 
-func (dc *InMemoryClient) Eval(script string, keyCount int) (interface{}, error) {
+func (dc *memoryClient) Eval(script string, keyCount int) (interface{}, error) {
 	// not implemented
 	return nil, nil
 }
 
-func (dc *InMemoryClient) getHash(key string) (map[string]string, bool) {
+func (dc *memoryClient) getHash(key string) (map[string]string, bool) {
 	value := dc.Keys[key]
 	if value == nil {
 		return nil, true
@@ -417,7 +423,7 @@ func (dc *InMemoryClient) getHash(key string) (map[string]string, bool) {
 	return hash, ok
 }
 
-func (dc *InMemoryClient) getHashAndCreateIfNotExists(key string) (map[string]string, bool) {
+func (dc *memoryClient) getHashAndCreateIfNotExists(key string) (map[string]string, bool) {
 	value := dc.Keys[key]
 	if value == nil {
 		value = make(map[string]string)
@@ -428,7 +434,7 @@ func (dc *InMemoryClient) getHashAndCreateIfNotExists(key string) (map[string]st
 	return hash, ok
 }
 
-func (dc *InMemoryClient) HDel(key string, fields ...string) (int64, error) {
+func (dc *memoryClient) HDel(key string, fields ...string) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -453,7 +459,7 @@ func (dc *InMemoryClient) HDel(key string, fields ...string) (int64, error) {
 	return deleteCounts, nil
 }
 
-func (dc *InMemoryClient) HExists(key string, field string) (bool, error) {
+func (dc *memoryClient) HExists(key string, field string) (bool, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -470,7 +476,7 @@ func (dc *InMemoryClient) HExists(key string, field string) (bool, error) {
 	return ok, nil
 }
 
-func (dc *InMemoryClient) HGet(key string, field string) (string, error) {
+func (dc *memoryClient) HGet(key string, field string) (string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -491,7 +497,7 @@ func (dc *InMemoryClient) HGet(key string, field string) (string, error) {
 	return fieldValue, nil
 }
 
-func (dc *InMemoryClient) HGetAll(key string) (map[string]string, error) {
+func (dc *memoryClient) HGetAll(key string) (map[string]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -503,7 +509,7 @@ func (dc *InMemoryClient) HGetAll(key string) (map[string]string, error) {
 	return hash, nil
 }
 
-func (dc *InMemoryClient) HLen(key string) (int64, error) {
+func (dc *memoryClient) HLen(key string) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -515,7 +521,7 @@ func (dc *InMemoryClient) HLen(key string) (int64, error) {
 	return int64(len(hash)), nil
 }
 
-func (dc *InMemoryClient) HMGet(key string, fields ...string) (map[string]string, error) {
+func (dc *memoryClient) HMGet(key string, fields ...string) (map[string]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -539,7 +545,7 @@ func (dc *InMemoryClient) HMGet(key string, fields ...string) (map[string]string
 	return filteredHash, nil
 }
 
-func (dc *InMemoryClient) HKeys(key string) ([]string, error) {
+func (dc *memoryClient) HKeys(key string) ([]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -560,7 +566,7 @@ func (dc *InMemoryClient) HKeys(key string) ([]string, error) {
 	return keys, nil
 }
 
-func (dc *InMemoryClient) HMSet(key string, fields map[string]interface{}) error {
+func (dc *memoryClient) HMSet(key string, fields map[string]interface{}) error {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -570,13 +576,13 @@ func (dc *InMemoryClient) HMSet(key string, fields map[string]interface{}) error
 	}
 
 	for field, value := range fields {
-		hash[field] = ValueToString(value)
+		hash[field] = valueToString(value)
 	}
 
 	return nil
 }
 
-func (dc *InMemoryClient) HSet(key string, field string, value interface{}) (bool, error) {
+func (dc *memoryClient) HSet(key string, field string, value interface{}) (bool, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -586,12 +592,12 @@ func (dc *InMemoryClient) HSet(key string, field string, value interface{}) (boo
 	}
 
 	_, exists := hash[field]
-	hash[field] = ValueToString(value)
+	hash[field] = valueToString(value)
 
 	return !exists, nil
 }
 
-func (dc *InMemoryClient) HVals(key string) ([]string, error) {
+func (dc *memoryClient) HVals(key string) ([]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -612,7 +618,7 @@ func (dc *InMemoryClient) HVals(key string) ([]string, error) {
 	return values, nil
 }
 
-func (dc *InMemoryClient) HScan(key string, pattern string) (map[string]string, error) {
+func (dc *memoryClient) HScan(key string, pattern string) (map[string]string, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -639,7 +645,7 @@ func (dc *InMemoryClient) HScan(key string, pattern string) (map[string]string, 
 	return matchedHash, nil
 }
 
-func (dc *InMemoryClient) HIncrBy(key string, field string, inc int64) (int64, error) {
+func (dc *memoryClient) HIncrBy(key string, field string, inc int64) (int64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -653,18 +659,18 @@ func (dc *InMemoryClient) HIncrBy(key string, field string, inc int64) (int64, e
 		value = "0"
 	}
 
-	number, ok := NumberToInt64(value)
+	number, ok := numberToInt64(value)
 	if !ok {
 		return 0, errors.New("value to be increased can not be converted to integer")
 	}
 
 	number += inc
 
-	hash[field] = ValueToString(number)
+	hash[field] = valueToString(number)
 	return number, nil
 }
 
-func (dc *InMemoryClient) HIncrByFloat(key string, field string, inc float64) (float64, error) {
+func (dc *memoryClient) HIncrByFloat(key string, field string, inc float64) (float64, error) {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
@@ -678,7 +684,7 @@ func (dc *InMemoryClient) HIncrByFloat(key string, field string, inc float64) (f
 		value = "0.0"
 	}
 
-	number, ok := NumberToFloat64(value)
+	number, ok := numberToFloat64(value)
 	if !ok {
 		return 0, errors.New("value to be increased can not be converted to float")
 	}

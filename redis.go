@@ -2,7 +2,7 @@ package redis
 
 import "errors"
 
-var client = NewInMemoryClient()
+var client Client = NewMemoryClient()
 
 // DefaultClient returns the default client
 func DefaultClient() Client {
@@ -122,7 +122,7 @@ func Incr(key string) error {
 // If the key does not exist, it is set to 0 before performing the operation.
 // NOTE: Please do not use this function due to complex coupling
 func IncrBy(key string, inc interface{}) (interface{}, error) {
-	increment, ok := NumberToInt64(inc)
+	increment, ok := numberToInt64(inc)
 	if !ok {
 		return nil, errors.New("Increment must be convertible to int64")
 	}
