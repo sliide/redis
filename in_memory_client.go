@@ -40,7 +40,7 @@ func (dc *memoryClient) Get(key string) (val string, err error) {
 	expire, hasExpire := dc.Expires[key]
 
 	if !ok || (hasExpire && time.Now().After(expire)) {
-		return "", errors.New("redigo: nil returned")
+		return "", redis.ErrNil
 	}
 
 	return valueToString(value), nil
